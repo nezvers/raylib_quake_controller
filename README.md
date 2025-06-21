@@ -1,4 +1,4 @@
-# raylib_quake_controller
+# Raylib Quake Controller
 Camera bobbing and strafe jump like in Quake, but in Raylib
 
 ## Build
