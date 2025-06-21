@@ -20,8 +20,6 @@
 #include "rlights.h"
 
 #define MODEL_COUNT 5
-#define GROUND_SIZE 200
-#define GROUND_SIZE2 100
 #define TAU (PI*2)
 
 /* Movement constants */
@@ -41,17 +39,19 @@
 #define NORMALIZE_INPUT 0
 
 
-
 typedef struct {
     Vector3 position;
     Vector3 velocity;
     bool is_grounded;
+    Sound sound_jump;
 }Body;
 
 Body CreateBody(
     Vector3 position,
     Vector3 velocity) {
-    return (Body) { position, velocity, false };
+    Sound jump_sound = LoadSound(RESOURCES_PATH"huh_jump.wav");
+    SetSoundVolume(jump_sound, 0.1f);
+    return (Body) { position, velocity, false, jump_sound };
 }
 
 typedef struct {
@@ -189,6 +189,7 @@ void UpdateBody(Body *body, float rot, char side, char forward, bool jumpPressed
     if (body->is_grounded && jumpPressed) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false; // <= Lost ground
+        PlaySound(body->sound_jump);
     }
 
     float decel = body->is_grounded ? FRICTION : AIR_DRAG;
@@ -242,6 +243,7 @@ int main(void)
     const int screenHeight = 720;
 
     InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d camera first person");
+    InitAudioDevice();
 
     // Define the camera to look into our 3d world (position, target, up vector)
     Camera camera = { 0 };
@@ -334,12 +336,8 @@ int main(void)
         DrawText("Camera controls:", 15, 15, 10, BLACK);
         DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
         DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
+        DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { player.velocity.x, player.velocity.z})), 15, 60, 10, BLACK);
 
-        DrawRectangle(600, 5, 195, 100, Fade(SKYBLUE, 0.5f));
-        DrawRectangleLines(600, 5, 195, 100, BLUE);
-
-        DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { player.velocity.x, player.velocity.z})), 610, 45, 10, BLACK);
-        DrawText(TextFormat("- Position: (%06.3f, %06.3f, %06.3f)", player.position.x, player.position.y, player.position.z), 610, 60, 10, BLACK);
 
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -349,6 +347,8 @@ int main(void)
     //--------------------------------------------------------------------------------------
     UnloadShader(shader);
     UnloadTexture(texture);
+    UnloadSound(player.sound_jump);
+    CloseAudioDevice();
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
