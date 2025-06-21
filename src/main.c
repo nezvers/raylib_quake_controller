@@ -1,19 +1,4 @@
-﻿/*******************************************************************************************
-*
-*   raylib [core] example - 3d camera first person
-*
-*   Example complexity rating: [★★☆☆] 2/4
-*
-*   Example originally created with raylib 1.3, last time updated with raylib 1.3
-*
-*   Example licensed under an unmodified zlib/libpng license, which is an OSI-certified,
-*   BSD-like license that allows static linking with closed source software
-*
-*   Copyright (c) 2015-2025 Ramon Santamaria (@raysan5)
-*
-********************************************************************************************/
-
-#include "raylib.h"
+﻿#include "raylib.h"
 #include "raymath.h"
 #include "rcamera.h"
 #define RLIGHTS_IMPLEMENTATION
