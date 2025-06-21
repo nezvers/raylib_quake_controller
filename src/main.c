@@ -16,8 +16,10 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rcamera.h"
+#define RLIGHTS_IMPLEMENTATION
+#include "rlights.h"
 
-#define MAX_COLUMNS 20
+#define MODEL_COUNT 5
 #define GROUND_SIZE 200
 #define GROUND_SIZE2 100
 #define TAU (PI*2)
@@ -50,6 +52,73 @@ Body CreateBody(
     Vector3 position,
     Vector3 velocity) {
     return (Body) { position, velocity, false };
+}
+
+typedef struct {
+    int ambientLoc;
+    int fogDensityLoc;
+    float fogDensity;
+    Light light;
+}ShaderAttributes;
+
+Shader CreateShader(ShaderAttributes* attrib) {
+    // Load shader and set up some uniforms
+    Shader shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"fog.fs");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+
+    // Ambient light level
+    attrib->ambientLoc = GetShaderLocation(shader, "ambient");
+    SetShaderValue(shader, attrib->ambientLoc, (float[4]) { 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+
+    attrib->fogDensity = 0.025f;
+    attrib->fogDensityLoc = GetShaderLocation(shader, "fogDensity");
+    SetShaderValue(shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+
+    // Using just 1 point lights
+    attrib->light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, Vector3Zero(), WHITE, shader);
+
+    return shader;
+}
+
+void UpdateShader(Shader* shader, Camera* camera, ShaderAttributes* attrib) {
+    if (IsKeyDown(KEY_UP)){
+        attrib->fogDensity += 0.001f;
+        if (attrib->fogDensity > 1.0f) { attrib->fogDensity = 1.0f; }
+    }
+
+    if (IsKeyDown(KEY_DOWN)){
+        attrib->fogDensity -= 0.001f;
+        if (attrib->fogDensity < 0.0f) { attrib->fogDensity = 0.0f; }
+    }
+
+    SetShaderValue(*shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+
+    // Update the light shader with the camera view position
+    SetShaderValue(*shader, shader->locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
+}
+
+void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* position_list) {
+    // Ground
+    model_list[0] = LoadModelFromMesh(GenMeshPlane(100.f, 100.f, 1.f, 1.f));
+    position_list[0] = (Vector3){ 0.f, 0.f, 0.f };
+
+    model_list[1] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
+    position_list[1] = (Vector3){ 16.f, 16.f, 16.f };
+
+    model_list[2] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
+    position_list[2] = (Vector3){ -16.f, 16.f, 16.f };
+
+    model_list[3] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
+    position_list[3] = (Vector3){ -16.f, 16.f, -16.f };
+
+    model_list[4] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
+    position_list[4] = (Vector3){ 16.f, 16.f, -16.f };
+
+    for (int i = 0; i < MODEL_COUNT; i++) {
+        model_list[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
+        model_list[i].materials[0].shader = *shader;
+    }
 }
 
 float GetWindStrength(Vector3 velocity) {
@@ -194,17 +263,15 @@ int main(void)
 
     SetCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
 
+    ShaderAttributes shader_attrib;
+    Shader shader = CreateShader(&shader_attrib);
 
-    // Generates some random columns
-    float heights[MAX_COLUMNS] = { 0 };
-    Vector3 positions[MAX_COLUMNS] = { 0 };
-    Color colors[MAX_COLUMNS] = { 0 };
+    Texture texture = LoadTexture(RESOURCES_PATH"test.png");
 
-    for (int i = 0; i < MAX_COLUMNS; i++){
-        heights[i] = (float)GetRandomValue(1, 12);
-        positions[i] = (Vector3){ (float)GetRandomValue(-GROUND_SIZE2 + 1, GROUND_SIZE2 -1), heights[i] / 2.0f, (float)GetRandomValue(-GROUND_SIZE2 + 1, GROUND_SIZE2 - 1) };
-        colors[i] = (Color){ GetRandomValue(20, 255), GetRandomValue(10, 55), 30, 255 };
-    }
+    Model model_list[MODEL_COUNT];
+    Vector3 position_list[MODEL_COUNT];
+    CreateModels(model_list, &shader, &texture, position_list);
+    
 
     DisableCursor();                    // Limit cursor to relative movement inside the window
 
@@ -244,7 +311,7 @@ int main(void)
             lean = Lerp(lean, 0.f, 10.f * delta);
         }
         SetCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
-
+        UpdateShader(&shader, &camera, &shader_attrib);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -254,18 +321,10 @@ int main(void)
 
         BeginMode3D(camera);
 
-        DrawPlane((Vector3) { 0.0f, 0.0f, 0.0f }, (Vector2) { GROUND_SIZE, GROUND_SIZE }, LIGHTGRAY); // Draw ground
-        DrawCube((Vector3) { -GROUND_SIZE2, 2.5f, 0.0f }, 1.0f, 5.0f, GROUND_SIZE, BLUE);     // Draw a blue wall
-        DrawCube((Vector3) { GROUND_SIZE2, 2.5f, 0.0f }, 1.0f, 5.0f, GROUND_SIZE, LIME);      // Draw a green wall
-        DrawCube((Vector3) { 0.0f, 2.5f, GROUND_SIZE2 }, GROUND_SIZE, 5.0f, 1.0f, GOLD);      // Draw a yellow wall
-
-        // Draw some cubes around
-        for (int i = 0; i < MAX_COLUMNS; i++)
-        {
-            DrawCube(positions[i], 2.0f, heights[i], 2.0f, colors[i]);
-            DrawCubeWires(positions[i], 2.f, heights[i], 2.f, MAROON);
+        for (int i = 0; i < MODEL_COUNT; i++) {
+            DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
         }
-
+        
         EndMode3D();
 
         // Draw info boxes
@@ -275,9 +334,6 @@ int main(void)
         DrawText("Camera controls:", 15, 15, 10, BLACK);
         DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
         DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
-        DrawText("- Camera mode keys: 1, 2, 3, 4", 15, 60, 10, BLACK);
-        DrawText("- Zoom keys: num-plus, num-minus or mouse scroll", 15, 75, 10, BLACK);
-        DrawText("- Camera projection key: P", 15, 90, 10, BLACK);
 
         DrawRectangle(600, 5, 195, 100, Fade(SKYBLUE, 0.5f));
         DrawRectangleLines(600, 5, 195, 100, BLUE);
@@ -291,6 +347,8 @@ int main(void)
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
+    UnloadShader(shader);
+    UnloadTexture(texture);
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
 
