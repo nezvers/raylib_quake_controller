@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"stdlib": "c",
+			"stddef.h": "c",
+			"typeinfo": "c",
+			"random": "c",
+			"array": "c",
+			"functional": "c",
+			"tuple": "c",
+			"type_traits": "c",
+			"utility": "c",
+			"stdio.h": "c",
+			"ctype.h": "c"
+		}
+	}
+}
