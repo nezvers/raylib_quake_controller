@@ -13,6 +13,7 @@
 #define CROUCH_SPEED 5.f
 #define JUMP_FORCE 12.f
 #define MAX_ACCEL 150.f
+/* Grounded drag */
 #define FRICTION 0.86f
 /* Increasing air drag, increases strafing speed */
 #define AIR_DRAG 0.98f
@@ -152,10 +153,12 @@ int main(void)
             bob_timer += delta * 3.f;
             walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
             lean = Lerp(lean, forward * 0.015f, 10.f * delta);
+            camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
         }
         else {
             walk_lerp = Lerp(walk_lerp, 0.f, 10.f * delta);
             lean = Lerp(lean, 0.f, 10.f * delta);
+            camera.fovy = Lerp(camera.fovy, 60.f, 5.f * delta);
         }
         UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
         UpdateShader(&shader, &camera, &shader_attrib);
