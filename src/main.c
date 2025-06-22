@@ -206,6 +206,7 @@ int main(void)
 void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold) {
     Vector2 input = (Vector2){ (float)side, (float)-forward };
 #if defined(NORMALIZE_INPUT)
+    // Slow down diagonal movement
     if (side != 0 & forward != 0) {
         input = Vector2Normalize(input);
     }
@@ -218,7 +219,8 @@ void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed
     }
     if (body->is_grounded && jumpPressed) {
         body->velocity.y = JUMP_FORCE;
-        body->is_grounded = false; // <= Lost ground
+        body->is_grounded = false;
+        SetSoundPitch(body->sound_jump, 1.f + (GetRandomValue(-100, 100) * 0.001));
         PlaySound(body->sound_jump);
     }
 
@@ -265,45 +267,52 @@ void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed
     body->position.y += body->velocity.y * delta;
     body->position.z += body->velocity.z * delta;
 
-    /* Fancy collision system against "floor" */
+    /* Fancy collision system against "THE FLOOR" */
     if (body->position.y <= 0.f) {
         body->position.y = 0.f;
         body->velocity.y = 0.f;
-        body->is_grounded = true; // <= enable jumping
+        body->is_grounded = true; // <= enables jumping
     }
 }
 
 void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_lerp, float lean) {
-    // Rotation axis
-    Vector3 up = (Vector3){ 0.f, 1.f, 0.f };
+    const Vector3 up = (Vector3){ 0.f, 1.f, 0.f };
+    const Vector3 target_offset = (Vector3){ 0.f, 0.f, -1.f };
 
     /* Left & Right */
-    Vector3 yaw = Vector3RotateByAxisAngle((Vector3) { 0.f, 0.f, -1.f }, up, rot->x);
+    Vector3 yaw = Vector3RotateByAxisAngle(target_offset, up, rot->x);
 
     {
         // Clamp view up
         float maxAngleUp = Vector3Angle(up, yaw);
         maxAngleUp -= 0.001f; // avoid numerical errors
-        if (-rot->y > maxAngleUp) { rot->y = -maxAngleUp; }
+        if ( -(rot->y) > maxAngleUp) { rot->y = -maxAngleUp; }
 
         // Clamp view down
         float maxAngleDown = Vector3Angle(Vector3Negate(up), yaw);
         maxAngleDown *= -1.0f; // downwards angle is negative
         maxAngleDown += 0.001f; // avoid numerical errors
-        if (-rot->y < maxAngleDown) { rot->y = -maxAngleDown; }
+        if ( -(rot->y) < maxAngleDown) { rot->y = -maxAngleDown; }
     }
 
+    /* Up & Down */
     Vector3 right = Vector3Normalize(Vector3CrossProduct(yaw, up));
+
     // Rotate view vector around right axis
     Vector3 pitch = Vector3RotateByAxisAngle(yaw, right, -rot->y - lean);
 
+    // Head animation
     // Rotate up direction around forward axis
     float _sin = sin(bob_time * PI);
-    camera->up = Vector3RotateByAxisAngle(up, pitch, _sin * -0.01f);
+    float _cos = cos(bob_time * PI);
+    const float BOB_ROTATION = 0.01f;
+    camera->up = Vector3RotateByAxisAngle(up, pitch, _sin * BOB_ROTATION);
 
     /* BOB */
-    Vector3 bobbing = Vector3Scale(right, _sin * 0.1);
-    bobbing.y = fabsf(cos(bob_time * PI)) * 0.15;
+    const float BOB_SIDE = 0.1f;
+    const float BOB_UP = 0.15f;
+    Vector3 bobbing = Vector3Scale(right, _sin * BOB_SIDE);
+    bobbing.y = fabsf(_cos * BOB_UP);
     camera->position = Vector3Add(camera->position, Vector3Scale(bobbing, walk_lerp));
 
     camera->target = Vector3Add(camera->position, pitch);
@@ -314,6 +323,7 @@ void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* 
     model_list[0] = LoadModelFromMesh(GenMeshPlane(100.f, 100.f, 1.f, 1.f));
     position_list[0] = (Vector3){ 0.f, 0.f, 0.f };
 
+    // Boxes
     model_list[1] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
     position_list[1] = (Vector3){ 16.f, 16.f, 16.f };
 
@@ -326,6 +336,7 @@ void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* 
     model_list[4] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
     position_list[4] = (Vector3){ 16.f, 16.f, -16.f };
 
+    // Assign texture and shader
     for (int i = 0; i < MODEL_COUNT; i++) {
         model_list[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
         model_list[i].materials[0].shader = *shader;
