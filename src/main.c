@@ -4,8 +4,13 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
+//#define PLATFORM_WEB
+
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
+
 #define MODEL_COUNT 5
-#define TAU (PI*2)
 
 /* Movement constants */
 #define GRAVITY 32.f
@@ -25,7 +30,6 @@
 
 #define NORMALIZE_INPUT 0
 
-
 typedef struct {
     Vector3 position;
     Vector3 velocity;
@@ -34,20 +38,17 @@ typedef struct {
     Sound sound_jump;
 }Body;
 
-Body CreateBody(
-    Vector3 position,
-    Vector3 velocity) {
-    Sound jump_sound = LoadSound(RESOURCES_PATH"huh_jump.wav");
-    SetSoundVolume(jump_sound, 0.1f);
-    return (Body) { position, velocity, (Vector3){0}, false, jump_sound };
-}
-
 typedef struct {
     int ambientLoc;
     int fogDensityLoc;
     float fogDensity;
     Light light;
 }ShaderAttributes;
+
+void UpdateDrawFrame(void);     // Update and Draw one frame
+
+/* Generate initialized struct */
+Body CreateBody(Vector3 position, Vector3 velocity);
 
 /*
 Shader setup and adds one point light.
@@ -79,6 +80,25 @@ forward: (-1 to 1) walk direction forward
 */
 void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold);
 
+const int screenWidth = 1280;
+const int screenHeight = 720;
+Vector2 sensitivity = { 0.001f, 0.001f };
+
+Body player;
+Camera camera;
+Vector2 look_rotation = { 0 };
+Vector3 velocity = { 0 };
+float bob_timer;
+float walk_lerp;
+float lean;
+ShaderAttributes shader_attrib;
+Shader shader;
+
+
+Model model_list[MODEL_COUNT];
+Vector3 position_list[MODEL_COUNT];
+Texture texture;
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -86,14 +106,11 @@ int main(void)
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 1280;
-    const int screenHeight = 720;
-
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d camera first person");
+    InitWindow(screenWidth, screenHeight, "Raylib Quake-like controller");
     InitAudioDevice();
 
-    Body player = CreateBody((Vector3) { 0.f, 0.f, 4.f },(Vector3) { 0 }, false );
-    Camera camera = { 0 };
+    player = CreateBody((Vector3) { 0.f, 0.f, 4.f },(Vector3) { 0 }, false );
+    camera = (Camera){ 0 };
     camera.fovy = 60.f;                                // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
     camera.position = (Vector3){
@@ -102,94 +119,34 @@ int main(void)
             player.position.z,
     };
 
-    Vector2 look_rotation = { 0 };
-    Vector3 velocity = { 0 };
-    Vector2 sensitivity = { 0.001f, 0.001f };
-    float bob_timer = 0.f;
-    float walk_lerp = 0.f;
-    float lean = 0;
+    look_rotation = (Vector2){ 0 };
+    velocity = (Vector3){ 0 };
+    bob_timer = 0.f;
+    walk_lerp = 0.f;
+    lean = 0;
     UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
 
+    shader = CreateShader(&shader_attrib);
 
-    ShaderAttributes shader_attrib;
-    Shader shader = CreateShader(&shader_attrib);
-
-
-    Model model_list[MODEL_COUNT];
-    Vector3 position_list[MODEL_COUNT];
-    Texture texture = LoadTexture(RESOURCES_PATH"test.png");
+    texture = LoadTexture(RESOURCES_PATH"test.png");
     CreateModels(model_list, &shader, &texture, position_list);
     
 
-    DisableCursor();                    // Limit cursor to relative movement inside the window
+    DisableCursor();  // Limit cursor to relative movement inside the window
 
-    SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
+#if defined(PLATFORM_WEB)
+    emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
+#else
+
+    SetTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!WindowShouldClose())        // Detect window close button or ESC key
+    while (!WindowShouldClose())    // Detect window close button or ESC key
     {
-        // Update
-        //----------------------------------------------------------------------------------
-
-        Vector2 mouse_delta = GetMouseDelta();
-        look_rotation.x -= mouse_delta.x * sensitivity.x;
-        look_rotation.y += mouse_delta.y * sensitivity.y;
-
-        char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
-        char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
-        bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
-        UpdateBody(&player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
-
-        
-        camera.position = (Vector3){
-            player.position.x,
-            player.position.y + (BOTTOM_HEIGHT + (crouching ? CROUCH_HEIGHT : STAND_HEIGHT)),
-            player.position.z,
-        };
-
-        float delta = GetFrameTime();
-        if (player.is_grounded && (forward != 0 || sideway != 0)) {
-            bob_timer += delta * 3.f;
-            walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
-            lean = Lerp(lean, forward * 0.015f, 10.f * delta);
-            camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
-        }
-        else {
-            walk_lerp = Lerp(walk_lerp, 0.f, 10.f * delta);
-            lean = Lerp(lean, 0.f, 10.f * delta);
-            camera.fovy = Lerp(camera.fovy, 60.f, 5.f * delta);
-        }
-        UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
-        UpdateShader(&shader, &camera, &shader_attrib);
-
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-
-        ClearBackground(RAYWHITE);
-
-        BeginMode3D(camera);
-
-        for (int i = 0; i < MODEL_COUNT; i++) {
-            DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
-        }
-        
-        EndMode3D();
-
-        // Draw info box
-        DrawRectangle(5, 5, 330, 100, Fade(SKYBLUE, 0.5f));
-        DrawRectangleLines(5, 5, 330, 100, BLUE);
-
-        DrawText("Camera controls:", 15, 15, 10, BLACK);
-        DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
-        DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
-        DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { player.velocity.x, player.velocity.z})), 15, 60, 10, BLACK);
-
-
-        EndDrawing();
-        //----------------------------------------------------------------------------------
+        UpdateDrawFrame();
     }
+#endif
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
@@ -201,6 +158,69 @@ int main(void)
     //--------------------------------------------------------------------------------------
 
     return 0;
+}
+
+void UpdateDrawFrame(void) {
+    // Update
+        //----------------------------------------------------------------------------------
+
+    Vector2 mouse_delta = GetMouseDelta();
+    look_rotation.x -= mouse_delta.x * sensitivity.x;
+    look_rotation.y += mouse_delta.y * sensitivity.y;
+
+    char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
+    char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
+    bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
+    UpdateBody(&player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
+
+
+    camera.position = (Vector3){
+        player.position.x,
+        player.position.y + (BOTTOM_HEIGHT + (crouching ? CROUCH_HEIGHT : STAND_HEIGHT)),
+        player.position.z,
+    };
+
+    float delta = GetFrameTime();
+    if (player.is_grounded && (forward != 0 || sideway != 0)) {
+        bob_timer += delta * 3.f;
+        walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
+        lean = Lerp(lean, forward * 0.015f, 10.f * delta);
+        camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
+    }
+    else {
+        walk_lerp = Lerp(walk_lerp, 0.f, 10.f * delta);
+        lean = Lerp(lean, 0.f, 10.f * delta);
+        camera.fovy = Lerp(camera.fovy, 60.f, 5.f * delta);
+    }
+    UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
+    UpdateShader(&shader, &camera, &shader_attrib);
+
+    // Draw
+    //----------------------------------------------------------------------------------
+    BeginDrawing();
+
+    ClearBackground(RAYWHITE);
+
+    BeginMode3D(camera);
+
+    for (int i = 0; i < MODEL_COUNT; i++) {
+        DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
+    }
+
+    EndMode3D();
+
+    // Draw info box
+    DrawRectangle(5, 5, 330, 100, Fade(SKYBLUE, 0.5f));
+    DrawRectangleLines(5, 5, 330, 100, BLUE);
+
+    DrawText("Camera controls:", 15, 15, 10, BLACK);
+    DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
+    DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
+    DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { player.velocity.x, player.velocity.z })), 15, 60, 10, BLACK);
+
+
+    EndDrawing();
+    //----------------------------------------------------------------------------------
 }
 
 void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold) {
@@ -316,6 +336,14 @@ void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_
     camera->position = Vector3Add(camera->position, Vector3Scale(bobbing, walk_lerp));
 
     camera->target = Vector3Add(camera->position, pitch);
+}
+
+Body CreateBody(
+    Vector3 position,
+    Vector3 velocity) {
+    Sound jump_sound = LoadSound(RESOURCES_PATH"huh_jump.wav");
+    SetSoundVolume(jump_sound, 0.2f);
+    return (Body) { position, velocity, (Vector3) { 0 }, false, jump_sound };
 }
 
 void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* position_list) {
