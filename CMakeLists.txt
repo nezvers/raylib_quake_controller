@@ -61,6 +61,7 @@ add_git_dependency_tag(
 ####################################################
 # PROJECT
 ####################################################
+
 # using VS Code match project name in settings.json
 project(QuakeController LANGUAGES C)
 
