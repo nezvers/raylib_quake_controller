@@ -128,7 +128,7 @@ int main(void)
 
     shader = CreateShader(&shader_attrib);
 
-    texture = LoadTexture(RESOURCES_PATH"test.png");
+    texture = LoadTexture(RESOURCES_PATH"texel_checker.png");
     CreateModels(model_list, &shader, &texture, position_list);
     
 
