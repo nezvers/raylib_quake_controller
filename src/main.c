@@ -1,4 +1,6 @@
 ﻿#include "raylib.h"
+
+#include "raylib.h"
 #include "raymath.h"
 #include "rcamera.h"
 #define RLIGHTS_IMPLEMENTATION
@@ -8,6 +10,12 @@
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
+#endif
+
+#if defined(PLATFORM_DESKTOP)
+#define GLSL_VERSION            330
+#else   // PLATFORM_ANDROID, PLATFORM_WEB
+#define GLSL_VERSION            100
 #endif
 
 #define MODEL_COUNT 5
