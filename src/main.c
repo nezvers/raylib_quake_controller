@@ -53,10 +53,29 @@ typedef struct {
     Light light;
 }ShaderAttributes;
 
+const int screenWidth = 1280;
+const int screenHeight = 720;
+Vector2 sensitivity = { 0.001f, 0.001f };
+
+Body player;
+Camera camera;
+Vector2 look_rotation = { 0 };
+float bob_timer;
+float walk_lerp;
+float headLerp;
+Vector2 lean;
+ShaderAttributes shader_attrib;
+Shader shader;
+
+
+Model model_list[MODEL_COUNT];
+Vector3 position_list[MODEL_COUNT];
+Texture texture;
+
 void UpdateDrawFrame(void);     // Update and Draw one frame
 
 /* Generate initialized struct */
-Body CreateBody(Vector3 position, Vector3 velocity);
+Body CreateBody(Vector3 position);
 
 /*
 Shader setup and adds one point light.
@@ -70,14 +89,8 @@ void UpdateShader(Shader* shader, Camera* camera, ShaderAttributes* attrib);
 /* Setups 3D models */
 void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* position_list);
 
-/*
-Sets camera rotation and animation
-rot: mouse rotation
-bob_time: time in animation
-walk_lerp: (0 -> 1) blends walking animation
-lean: (-1 -> 1)slight additional look up/down when walking
-*/
-void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_lerp, float lean);
+/* Sets camera rotation and animation */
+void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk_lerp, Vector2 lean);
 
 /*
 Quake-like movement
@@ -87,25 +100,6 @@ side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
 void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold);
-
-const int screenWidth = 1280;
-const int screenHeight = 720;
-Vector2 sensitivity = { 0.001f, 0.001f };
-
-Body player;
-Camera camera;
-Vector2 look_rotation = { 0 };
-Vector3 velocity = { 0 };
-float bob_timer;
-float walk_lerp;
-float lean;
-ShaderAttributes shader_attrib;
-Shader shader;
-
-
-Model model_list[MODEL_COUNT];
-Vector3 position_list[MODEL_COUNT];
-Texture texture;
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -117,21 +111,22 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Raylib Quake-like controller");
     InitAudioDevice();
 
-    player = CreateBody((Vector3) { 0.f, 0.f, 4.f },(Vector3) { 0 }, false );
+    player = CreateBody(Vector3Zero());
     camera = (Camera){ 0 };
     camera.fovy = 60.f;                                // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
-    camera.position = (Vector3){
-            player.position.x,
-            player.position.y + (BOTTOM_HEIGHT + STAND_HEIGHT),
-            player.position.z,
-    };
 
     look_rotation = (Vector2){ 0 };
-    velocity = (Vector3){ 0 };
     bob_timer = 0.f;
     walk_lerp = 0.f;
-    lean = 0;
+    headLerp = STAND_HEIGHT;
+    lean = Vector2Zero();
+
+    camera.position = (Vector3){
+            player.position.x,
+            player.position.y + (BOTTOM_HEIGHT + headLerp),
+            player.position.z,
+    };
     UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
 
     shader = CreateShader(&shader_attrib);
@@ -181,25 +176,28 @@ void UpdateDrawFrame(void) {
     bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
     UpdateBody(&player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
 
+    float delta = GetFrameTime();
+    headLerp = Lerp(headLerp, (crouching ? CROUCH_HEIGHT : STAND_HEIGHT), 20.f * delta);
 
     camera.position = (Vector3){
         player.position.x,
-        player.position.y + (BOTTOM_HEIGHT + (crouching ? CROUCH_HEIGHT : STAND_HEIGHT)),
+        player.position.y + (BOTTOM_HEIGHT + headLerp),
         player.position.z,
     };
 
-    float delta = GetFrameTime();
     if (player.is_grounded && (forward != 0 || sideway != 0)) {
         bob_timer += delta * 3.f;
         walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
-        lean = Lerp(lean, forward * 0.015f, 10.f * delta);
         camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
     }
     else {
         walk_lerp = Lerp(walk_lerp, 0.f, 10.f * delta);
-        lean = Lerp(lean, 0.f, 10.f * delta);
         camera.fovy = Lerp(camera.fovy, 60.f, 5.f * delta);
     }
+
+    lean.x = Lerp(lean.x, sideway * 0.02f, 10.f * delta);
+    lean.y = Lerp(lean.y, forward * 0.015f, 10.f * delta);
+
     UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
     UpdateShader(&shader, &camera, &shader_attrib);
 
@@ -211,9 +209,11 @@ void UpdateDrawFrame(void) {
 
     BeginMode3D(camera);
 
+    // Draw level
     for (int i = 0; i < MODEL_COUNT; i++) {
         DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
     }
+    DrawSphere((Vector3) {300.f, 300.f, 0.f}, 100.f, RED);
 
     EndMode3D();
 
@@ -303,7 +303,7 @@ void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed
     }
 }
 
-void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_lerp, float lean) {
+void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk_lerp, Vector2 lean) {
     const Vector3 up = (Vector3){ 0.f, 1.f, 0.f };
     const Vector3 target_offset = (Vector3){ 0.f, 0.f, -1.f };
 
@@ -327,14 +327,14 @@ void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_
     Vector3 right = Vector3Normalize(Vector3CrossProduct(yaw, up));
 
     // Rotate view vector around right axis
-    Vector3 pitch = Vector3RotateByAxisAngle(yaw, right, -rot->y - lean);
+    Vector3 pitch = Vector3RotateByAxisAngle(yaw, right, -rot->y - lean.y);
 
     // Head animation
     // Rotate up direction around forward axis
-    float _sin = sin(bob_time * PI);
-    float _cos = cos(bob_time * PI);
+    float _sin = sin(head_time * PI);
+    float _cos = cos(head_time * PI);
     const float BOB_ROTATION = 0.01f;
-    camera->up = Vector3RotateByAxisAngle(up, pitch, _sin * BOB_ROTATION);
+    camera->up = Vector3RotateByAxisAngle(up, pitch, _sin * BOB_ROTATION + lean.x);
 
     /* BOB */
     const float BOB_SIDE = 0.1f;
@@ -347,11 +347,10 @@ void UpdateCameraAngle(Camera* camera, Vector2* rot, float bob_time, float walk_
 }
 
 Body CreateBody(
-    Vector3 position,
-    Vector3 velocity) {
+    Vector3 position) {
     Sound jump_sound = LoadSound(RESOURCES_PATH"huh_jump.wav");
     SetSoundVolume(jump_sound, 0.2f);
-    return (Body) { position, velocity, (Vector3) { 0 }, false, jump_sound };
+    return (Body) { position, Vector3Zero(), Vector3Zero(), false, jump_sound };
 }
 
 void CreateModels(Model* model_list, Shader* shader, Texture* texture, Vector3* position_list) {
