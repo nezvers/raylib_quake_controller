@@ -16,6 +16,7 @@ PlaneGeom planeGeom;
 dBodyID objects[numObj];
 dBodyID bullets[numBullets];
 dGeomID plane_geometry;
+dGeomID tower_geometry[4];
 PlayerBody playerBody;
 dContactGeom contact;
 
@@ -246,6 +247,16 @@ void CreatePhysics(Model* plane) {
     plane_geometry = dCreatePlane(space, 0, 1, 0, 0);
     dGeomSetCategoryBits(plane_geometry, catBits[PLANE]);
     dGeomSetCollideBits(plane_geometry, catBits[ALL]);
+
+    for (int i = 0; i < 4; i++) {
+        tower_geometry[i] = dCreateBox(space, 16.f, 32.f, 16.f);
+        dGeomSetCategoryBits(tower_geometry[i], catBits[PLANE]);
+        dGeomSetCollideBits(tower_geometry[i], catBits[ALL]);
+    }
+    dGeomSetPosition(tower_geometry[0], 16.f, 16.f, 16.f);
+    dGeomSetPosition(tower_geometry[1], -16.f, 16.f, 16.f);
+    dGeomSetPosition(tower_geometry[2], -16.f, 16.f, -16.f);
+    dGeomSetPosition(tower_geometry[3], 16.f, 16.f, -16.f);
 }
 
 void DestroyPhysics() {
