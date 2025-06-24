@@ -267,11 +267,11 @@ static void nearCallback(void* data, dGeomID o1, dGeomID o2){
     dBodyID b2 = dGeomGetBody(o2);
     if (b1 && b2 && dAreConnectedExcluding(b1, b2, dJointTypeContact))
         return;
-
+    bool is_player = b1 == playerBody.body || b2 == playerBody.body;
     dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
     for (i = 0; i < MAX_CONTACTS; i++) {
         /*contact[i].surface.mode = dContactBounce | dContactSoftCFM | dContactApprox1;*/
-        contact[i].surface.mode = dContactBounce;
+        contact[i].surface.mode = is_player ? (dContactSlip1 | dContactSlip2) : dContactBounce;
         contact[i].surface.mu = dInfinity;
         contact[i].surface.bounce = 0.0;
         contact[i].surface.bounce_vel = 0.1;
