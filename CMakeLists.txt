@@ -36,17 +36,17 @@ add_git_dependency_tag(
 )
 
 # Add ODE
-# FetchContent_Declare(
-#   ode
-#   GIT_REPOSITORY https://bitbucket.org/odedevs/ode.git
-#   GIT_SHALLOW    TRUE
-#   GIT_PROGRESS   TRUE
-#   GIT_TAG        master)
-# set(ODE_WITH_DEMOS OFF CACHE BOOL "" FORCE)
-# set(ODE_WITH_TESTS OFF CACHE BOOL "" FORCE)
-# set(ODE_DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
-# set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# FetchContent_MakeAvailable(ode)
+FetchContent_Declare(
+  ode
+  GIT_REPOSITORY https://bitbucket.org/odedevs/ode.git
+  GIT_SHALLOW    TRUE
+  GIT_PROGRESS   TRUE
+  GIT_TAG        master)
+set(ODE_WITH_DEMOS OFF CACHE BOOL "" FORCE)
+set(ODE_WITH_TESTS OFF CACHE BOOL "" FORCE)
+set(ODE_DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+FetchContent_MakeAvailable(ode)
 
 
 # Add Box2d
@@ -74,7 +74,7 @@ target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES} )
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-# target_link_libraries(${PROJECT_NAME} PRIVATE ODE)
+target_link_libraries(${PROJECT_NAME} PRIVATE ODE)
 # target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 
 ####################################################
