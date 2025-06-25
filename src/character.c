@@ -22,11 +22,10 @@ void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed
     float delta = GetFrameTime();
 
     float* phys_velocity = dBodyGetLinearVel(playerBody.body);
-    body->velocity = (Vector3){ phys_velocity[0], body->velocity.y, phys_velocity[2]};
+    body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
 
-    if (!body->is_grounded) {
-        body->velocity.y -= GRAVITY * delta;
-    }
+    body->velocity.y -= GRAVITY * delta;
+
     if (body->is_grounded && jumpPressed) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false;

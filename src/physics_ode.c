@@ -89,7 +89,7 @@ PlayerBody createPlayerBody(dSpaceID space, dWorldID world) {
     dGeomSetOffsetPosition(footGeom, 0, 0, 0.5);
 
     // give the body a position and rotation
-    dBodySetPosition(obj, -62, 5, 15);
+    dBodySetPosition(obj, 0, 5, 15);
     dRFromAxisAndAngle(R, 1.0f, 0, 0, 90.0f * DEG2RAD);
     dBodySetRotation(obj, R);
 
@@ -232,7 +232,7 @@ void CreatePhysics(Model* plane) {
     world = dWorldCreate();
     space = dHashSpaceCreate(NULL);
     contactgroup = dJointGroupCreate(0);
-    dWorldSetGravity(world, 0, -9.8, 0);
+    dWorldSetGravity(world, 0, 0, 0);
 
     //planeGeom = createStaticPlane(space, *plane);
     playerBody = createPlayerBody(space, world);
@@ -306,6 +306,11 @@ void UpdatePhysics(float delta_time) {
 
     // step the world
     if (delta_time > 0.f) {
+        float* phys_velocity;
+        for (int i = 0; i < numObj; i++) {
+            phys_velocity = dBodyGetLinearVel(objects[i]);
+            dBodySetLinearVel(objects[i], phys_velocity[0], phys_velocity[1] - 9.8 * delta_time, phys_velocity[2]);
+        }
         dWorldQuickStep(world, delta_time);
     }
     dJointGroupEmpty(contactgroup);

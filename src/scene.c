@@ -72,7 +72,7 @@ void DrawScene() {
     for (int i = 0; i < MODEL_COUNT; i++) {
         DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
     }
-    DrawSphere((Vector3) { 300.f, 300.f, 0.f }, 100.f, RED);
+    DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
     //DrawModel(plane, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
     DrawPhysics(plane, sphere, box);
 }
