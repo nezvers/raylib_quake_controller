@@ -1,6 +1,7 @@
 #include "app_state.h"
 
 #ifdef PLATFORM_WEB
+    #undef PENTIUM
     #include <emscripten/emscripten.h>
 #endif
 
@@ -40,7 +41,7 @@ int main(void){
     MainInit();
     
 #ifdef PLATFORM_WEB
-    emscripten_set_main_loop(UpdateFrame, 0, 1);
+    emscripten_set_main_loop(MainUpdate, 0, 1);
 #else
     // Main game loop
     while (!WindowShouldClose()){    // Detect window close button or ESC key

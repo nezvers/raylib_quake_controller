@@ -3,50 +3,64 @@
 #include "raymath.h"
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
+
 
 ShaderAttributes shader_attrib;
 Shader shader;
 
 Model model_list[MODEL_COUNT];
 Vector3 position_list[MODEL_COUNT];
+Scene demo_scene;
 Model plane;
 Model box;
 Model sphere;
 Texture texture;
 Texture2D texturePlane;
 
+void SceneAddPlane(Scene* scene, Vector2 size, Vector3 position, Shader shadr, Texture texture) {
+    StaticMesh _static_mesh = { 0 };
+    _static_mesh.model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
+    _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    _static_mesh.model.materials[0].shader = shadr;
+    _static_mesh.position = position;
+    // TODO: Generate physical collider
+    arrput(scene->static_list, _static_mesh);
+}
+
+void SceneAddCube(Scene* scene, Vector3 size, Vector3 position, Shader shadr, Texture texture) {
+    StaticMesh _static_mesh = { 0 };
+    _static_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
+    _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    _static_mesh.model.materials[0].shader = shadr;
+    _static_mesh.position = position;
+    // TODO: Generate physical collider
+    arrput(scene->static_list, _static_mesh);
+}
+
 void CreateModels() {
-    // Ground
-    model_list[0] = LoadModelFromMesh(GenMeshPlane(100.f, 100.f, 1.f, 1.f));
-    position_list[0] = (Vector3){ 0.f, 0.f, 0.f };
-
-    // Boxes
-    model_list[1] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
-    position_list[1] = (Vector3){ 16.f, 16.f, 16.f };
-
-    model_list[2] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
-    position_list[2] = (Vector3){ -16.f, 16.f, 16.f };
-
-    model_list[3] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
-    position_list[3] = (Vector3){ -16.f, 16.f, -16.f };
-
-    model_list[4] = LoadModelFromMesh(GenMeshCube(16.f, 32.f, 16.f));
-    position_list[4] = (Vector3){ 16.f, 16.f, -16.f };
-
+    demo_scene.static_list = NULL;
     // Assign texture and shader
-    texture = LoadTexture(RESOURCES_PATH"texel_checker.png");
+    demo_scene.textures[0] = LoadTexture(RESOURCES_PATH"texel_checker.png");
+    demo_scene.shaders[0] = shader;
+
+    // Ground
+    SceneAddPlane(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+
+    Texture _tex = LoadTexture(RESOURCES_PATH"texel_checker.png");
     texturePlane = LoadTexture(RESOURCES_PATH"grass-texture.png");
 
-    for (int i = 0; i < MODEL_COUNT; i++) {
-        model_list[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-        model_list[i].materials[0].shader = shader;
-    }
     plane = LoadModel(RESOURCES_PATH"grass-plane.obj");
     box = LoadModelFromMesh(GenMeshCube(1, 1, 1));
     sphere = LoadModelFromMesh(GenMeshSphere(.5, 32, 32));
 
-    box.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    sphere.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    box.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = _tex;
+    sphere.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = _tex;
     plane.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texturePlane;
 }
 
@@ -69,8 +83,8 @@ void UpdateScene(Camera* camera) {
 
 void DrawScene() {
     // Draw level
-    for (int i = 0; i < MODEL_COUNT; i++) {
-        DrawModel(model_list[i], position_list[i], 1.0f, WHITE);
+    for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
+        DrawModel(demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
     }
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
     //DrawModel(plane, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
@@ -78,6 +92,7 @@ void DrawScene() {
 }
 
 void UnloadScene() {
+    arrfree(demo_scene.static_list);
     UnloadShader(shader);
     UnloadTexture(texture);
     UnloadTexture(texturePlane);

@@ -2,7 +2,8 @@
 #define CHARACTER_H
 
 #include "raylib.h"
-#include "rlights.h"
+#include "sounds.h"
+#include "physics_ode.h"
 
 
 /* Movement constants */
@@ -29,11 +30,12 @@ typedef struct {
     Vector3 dir;
     bool is_grounded;
     Sound sound_jump;
-}Body;
+    Body phys;
+}Character;
 
 
 /* Generate initialized struct */
-Body CreateBody(Vector3 position);
+Character CreateBody(Vector3 position);
 
 /* Sets camera rotation and animation */
 void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk_lerp, Vector2 lean);
@@ -45,6 +47,6 @@ rot: horizontal rotation
 side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
-void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold);
+void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold);
 
 #endif // CHARACTER_H

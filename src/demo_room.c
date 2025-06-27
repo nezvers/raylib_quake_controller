@@ -15,7 +15,7 @@ AppState app_demo_room = { Enter, Update, Exit, Draw, Gui };
 
 
 Vector2 sensitivity = { 0.001f, 0.001f };
-Body player;
+Character player;
 Camera camera;
 Vector2 look_rotation = { 0 };
 float bob_timer;

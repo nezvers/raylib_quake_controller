@@ -1,12 +1,11 @@
 #include "character.h"
-#include "sounds.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rcamera.h"
 #include "scene.h"
 
 
-void UpdateBody(Body* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold) {
+void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold) {
     Vector2 input = (Vector2){ (float)side, (float)-forward };
 #if defined(NORMALIZE_INPUT)
     // Slow down diagonal movement
@@ -126,6 +125,6 @@ void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk
     camera->target = Vector3Add(camera->position, pitch);
 }
 
-Body CreateBody(Vector3 position) {
-    return (Body) { position, Vector3Zero(), Vector3Zero(), false, sound_list[JUMP_HUH]};
+Character CreateBody(Vector3 position) {
+    return (Character) { position, Vector3Zero(), Vector3Zero(), false, sound_list[JUMP_HUH]};
 }

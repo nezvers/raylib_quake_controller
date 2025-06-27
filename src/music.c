@@ -13,7 +13,7 @@ void SetNewMusicFile(const char* file_name) {
     music = LoadMusicStream(file_name);
 }
 
-void SetNewMusicBuffer(unsigned char* data, size_t size) {
-    music = LoadMusicStreamFromMemory(".xm", data, sizeof size);
+void SetNewMusicBuffer(unsigned char* data, unsigned size) {
+    music = LoadMusicStreamFromMemory(".xm", data, size);
 }
 

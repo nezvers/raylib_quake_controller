@@ -9,6 +9,6 @@ void SetAppMusicVolume(int value);
 
 void SetNewMusicFile(const char* file_name);
 
-void SetNewMusicBuffer(unsigned char* data, size_t size);
+void SetNewMusicBuffer(unsigned char* data, unsigned size);
 
 #endif // MUSIC_H

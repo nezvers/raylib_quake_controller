@@ -17,7 +17,7 @@ dBodyID objects[numObj];
 dBodyID bullets[numBullets];
 dGeomID plane_geometry;
 dGeomID tower_geometry[4];
-PlayerBody playerBody;
+Body playerBody;
 dContactGeom contact;
 
 
@@ -69,7 +69,7 @@ dBodyID createRandomObject(dSpaceID space, dWorldID world, int type) {
     return obj;
 }
 
-PlayerBody createPlayerBody(dSpaceID space, dWorldID world) {
+Body createPlayerBody(dSpaceID space, dWorldID world) {
     dMass m;
     dMatrix3 R;
     dBodyID obj = dBodyCreate(world);
@@ -100,7 +100,7 @@ PlayerBody createPlayerBody(dSpaceID space, dWorldID world) {
     dGeomSetCollideBits(geom, catBits[ALL] & (~catBits[PLAYER_BULLET]));
     dBodySetGravityMode(geom, 8);
 
-    return (PlayerBody) { .body = obj, .geom = geom, .footGeom = footGeom };
+    return (Body) { .body = obj, .geom = geom, .footGeom = footGeom };
 }
 
 dBodyID createBullet(dSpaceID space, dWorldID world) {

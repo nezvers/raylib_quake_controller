@@ -1,3 +1,6 @@
+#ifndef PHYSICS_ODE_H
+#define PHYSICS_ODE_H
+
 #include <ode/ode.h>
 #include "raylib.h"
 
@@ -6,11 +9,11 @@ typedef struct PlaneBody {
     int* indexes;
 } PlaneGeom;
 
-typedef struct PlayerBody {
+typedef struct {
     dBodyID body;
     dGeomID geom;
     dGeomID footGeom;
-} PlayerBody;
+} Body;
 
 enum INDEX {
     PLANE = 0,
@@ -23,7 +26,7 @@ enum INDEX {
 
 
 extern dSpaceID space;
-extern PlayerBody playerBody;
+extern Body playerBody;
 
 
 // when objects potentially collide this callback is called
@@ -44,3 +47,5 @@ void drawBodyCylinder(dBodyID body, Model cylinder);
 void drawBodyModel(dBodyID body, Model model);
 
 bool IsPlayerGrounded();
+
+#endif // PHYSICS_ODE_H

@@ -46,6 +46,12 @@ set(ODE_WITH_DEMOS OFF CACHE BOOL "" FORCE)
 set(ODE_WITH_TESTS OFF CACHE BOOL "" FORCE)
 set(ODE_DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if (${PLATFORM} STREQUAL "Web")
+# unset(PENTIUM CACHE)
+set(PENTIUM FALSE CACHE BOOL "Enable Pentium-specific code" FORCE)
+# target_compile_definitions(ODE PRIVATE __linux__)
+endif()
 FetchContent_MakeAvailable(ode)
 
 
@@ -82,9 +88,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ODE)
 ####################################################
 
 # Output directory structure configuration.
+if (${PLATFORM} STREQUAL "Web")
+unset(PENTIUM CACHE)
+
+else()
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
 set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
 set(TEST_OUTPUT_PATH "${EXECUTABLE_OUTPUT_PATH}/test")
+endif()
 
 # Setting RESOURCES_PATH
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
