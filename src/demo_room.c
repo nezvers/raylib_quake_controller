@@ -14,14 +14,9 @@ static void Gui();
 AppState app_demo_room = { Enter, Update, Exit, Draw, Gui };
 
 
-Vector2 sensitivity = { 0.001f, 0.001f };
 //Character player;
-Camera camera;
-Vector2 look_rotation = { 0 };
-float bob_timer;
-float walk_lerp;
-float headLerp;
-Vector2 lean;
+//Camera camera;
+
 
 
 bool is_mouse_disabled = false;
@@ -30,26 +25,8 @@ static void Enter() {
     SetExitKey(0);
 
     // Sets level physics and models
+    // TODO: manage scene loading
     CreateScene();
-
-
-    camera = (Camera){ 0 };
-    camera.fovy = 60.f;
-    camera.projection = CAMERA_PERSPECTIVE;
-
-    look_rotation = (Vector2){ 0 };
-    bob_timer = 0.f;
-    walk_lerp = 0.f;
-    headLerp = STAND_HEIGHT;
-    lean = Vector2Zero();
-
-    Character player = demo_scene.player;
-    camera.position = (Vector3){
-            player.position.x,
-            player.position.y + (BOTTOM_HEIGHT + headLerp),
-            player.position.z,
-    };
-    UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
 
     DisableCursor();  // Limit cursor to relative movement inside the window
     is_mouse_disabled = true;
@@ -67,58 +44,16 @@ static void Update() {
         }
     }
 
-    if (is_mouse_disabled) {
-        Vector2 mouse_delta = GetMouseDelta();
-        look_rotation.x -= mouse_delta.x * sensitivity.x;
-        look_rotation.y += mouse_delta.y * sensitivity.y;
-    }
-
-    char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
-    char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
-    bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
-    UpdateBody(&demo_scene.player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
-
     float delta = GetFrameTime();
-    headLerp = Lerp(headLerp, (crouching ? CROUCH_HEIGHT : STAND_HEIGHT), 20.f * delta);
-
-    UpdatePhysics(delta);
-
-    float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
-    demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
-
-    camera.position = (Vector3){
-        demo_scene.player.position.x,
-        demo_scene.player.position.y + (BOTTOM_HEIGHT + headLerp),
-        demo_scene.player.position.z,
-    };
-
-    if (demo_scene.player.is_grounded && (forward != 0 || sideway != 0)) {
-        bob_timer += delta * 3.f;
-        walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
-        camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
+    // TODO: inputs as struct
+    if (is_mouse_disabled) {
+        UpdateScene(delta);
     }
-    else {
-        walk_lerp = Lerp(walk_lerp, 0.f, 10.f * delta);
-        camera.fovy = Lerp(camera.fovy, 60.f, 5.f * delta);
-    }
-
-    lean.x = Lerp(lean.x, sideway * 0.02f, 10.f * delta);
-    lean.y = Lerp(lean.y, forward * 0.015f, 10.f * delta);
-
-
-
-    UpdateCameraAngle(&camera, &look_rotation, bob_timer, walk_lerp, lean);
-    UpdateScene(&camera);
 }
 
 static void Draw() {
-    ClearBackground(RAYWHITE);
-
-    BeginMode3D(camera);
 
     DrawScene();
-
-    EndMode3D();
 }
 
 static void Gui(){

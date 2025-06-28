@@ -18,9 +18,6 @@
 #define AIR_DRAG 0.98f
 /* Responsiveness for turning movement direction to looked direction */
 #define CONTROL 15.f
-#define CROUCH_HEIGHT 0.f
-#define STAND_HEIGHT 1.f
-#define BOTTOM_HEIGHT 0.5f
 
 #define NORMALIZE_INPUT 0
 
@@ -28,6 +25,7 @@ typedef struct {
     Vector3 position;
     Vector3 velocity;
     Vector3 dir;
+    Vector2 rotation;
     bool is_grounded;
     Sound sound_jump;
     Body phys;
@@ -35,10 +33,7 @@ typedef struct {
 
 
 /* Generate initialized struct */
-Character CreateBody(Vector3 position);
-
-/* Sets camera rotation and animation */
-void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk_lerp, Vector2 lean);
+Character CreateBody(Vector3 position, Vector2 rotation);
 
 /*
 Quake-like movement

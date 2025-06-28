@@ -39,7 +39,7 @@ ShaderAttributes CreateShader();
 
 void CreateScene();
 
-void UpdateScene(Camera* camera);
+void UpdateScene(float delta);
 
 void DrawScene();
 

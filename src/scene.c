@@ -5,7 +5,9 @@
 #include "rlights.h"
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
+#include "camera.h"
 
+Vector2 sensitivity = { 0.001f, 0.001f };
 
 Scene demo_scene;
 Model plane;
@@ -73,7 +75,8 @@ void CreateModels() {
 void CreateScene() {
     CreatePhysics();
     CreateModels();
-    demo_scene.player = CreateBody(Vector3Zero());
+    demo_scene.player = CreateBody(Vector3Zero(), Vector2Zero());
+    demo_scene.camera = CreateCamera(demo_scene.player.position, &demo_scene.player.rotation);
 }
 
 void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
@@ -83,11 +86,31 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
 }
 
-void UpdateScene(Camera* camera) {
-    UpdateShader(&demo_scene.shaders[0], camera);
+void UpdateScene(float delta) {
+    Vector2 mouse_delta = GetMouseDelta();
+    demo_scene.player.rotation.x -= mouse_delta.x * sensitivity.x;
+    demo_scene.player.rotation.y += mouse_delta.y * sensitivity.y;
+
+    char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
+    char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
+    bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
+    UpdateBody(&demo_scene.player, demo_scene.player.rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
+
+    UpdatePhysics(delta);
+
+    float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
+    demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
+    
+    UpdateCameraAngle(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, forward, sideway, crouching, demo_scene.player.is_grounded);
+
+    UpdateShader(&demo_scene.shaders[0], &demo_scene.camera);
 }
 
 void DrawScene() {
+    ClearBackground(RAYWHITE);
+
+    BeginMode3D(demo_scene.camera);
+
     // Draw level
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
         DrawModel(demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
@@ -95,6 +118,8 @@ void DrawScene() {
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
     //DrawModel(plane, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
     DrawPhysics(plane, sphere, box);
+
+    EndMode3D();
 }
 
 void UnloadScene() {

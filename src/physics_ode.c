@@ -285,6 +285,7 @@ static void nearCallback(void* data, dGeomID o1, dGeomID o2){
 
 void UpdatePhysics(float delta_time) {
     // check for collisions
+    // TODO: give context to recognize necessary instances in callback
     dSpaceCollide(space, 0, &nearCallback);
 
     // step the world
