@@ -101,7 +101,7 @@ void UpdateScene(float delta) {
     float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
     demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
     
-    UpdateCameraAngle(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, forward, sideway, crouching, demo_scene.player.is_grounded);
+    UpdateFPSCameraAnimated(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, forward, sideway, crouching, demo_scene.player.is_grounded);
 
     UpdateShader(&demo_scene.shaders[0], &demo_scene.camera);
 }

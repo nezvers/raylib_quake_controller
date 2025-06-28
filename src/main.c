@@ -1,7 +1,6 @@
 #include "app_state.h"
 
 #ifdef PLATFORM_WEB
-    #undef PENTIUM
     #include <emscripten/emscripten.h>
 #endif
 
