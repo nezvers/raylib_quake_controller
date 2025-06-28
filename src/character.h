@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "sounds.h"
+#include "input.h"
 #include "physics_ode.h"
 
 
@@ -42,6 +43,6 @@ rot: horizontal rotation
 side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
-void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold);
+void UpdateBody(Character* body, float rot, PlayerInput input);
 
 #endif // CHARACTER_H

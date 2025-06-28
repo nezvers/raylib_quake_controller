@@ -5,12 +5,12 @@
 #include "scene.h"
 
 
-void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPressed, bool crouchHold) {
-    Vector2 input = (Vector2){ (float)side, (float)-forward };
+void UpdateBody(Character* body, float rot, PlayerInput input) {
+    Vector2 input_dir = (Vector2){ (float)input.x, (float)-input.y };
 #if defined(NORMALIZE_INPUT)
     // Slow down diagonal movement
-    if (side != 0 & forward != 0) {
-        input = Vector2Normalize(input);
+    if (input.x != 0 & input.y != 0) {
+        input_dir = Vector2Normalize(input_dir);
     }
 #endif
 
@@ -25,7 +25,7 @@ void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPr
 
     body->velocity.y -= GRAVITY * delta;
 
-    if (body->is_grounded && jumpPressed) {
+    if (body->is_grounded && input.jump) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false;
         //SetSoundPitch(sound_list[JUMP_HUH], 1.f + (GetRandomValue(-100, 100) * 0.001));
@@ -37,9 +37,9 @@ void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPr
     Vector3 right_vec = (Vector3){ cos(-rot), 0.f, sin(-rot) };
 
     Vector3 desired_dir = {
-        input.x * right_vec.x + input.y * front_vec.x,
+        input_dir.x * right_vec.x + input_dir.y * front_vec.x,
         0.f,
-        input.x * right_vec.z + input.y * front_vec.z,
+        input_dir.x * right_vec.z + input_dir.y * front_vec.z,
     };
 
     // Smooth out a direction change
@@ -65,7 +65,7 @@ void UpdateBody(Character* body, float rot, char side, char forward, bool jumpPr
     a Player can make the speed faster by bringing the direction closer to horizontal velocity angle
     More info here: https://youtu.be/v3zT3Z5apaM?t=165
     */
-    float max_speed = crouchHold ? CROUCH_SPEED : MAX_SPEED;
+    float max_speed = input.crouch ? CROUCH_SPEED : MAX_SPEED;
     float accel = Clamp(max_speed - speed, 0.f, MAX_ACCEL * delta);
     hvel.x += body->dir.x * accel;
     hvel.z += body->dir.z * accel;

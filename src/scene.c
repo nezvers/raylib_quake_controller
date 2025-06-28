@@ -6,8 +6,8 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 #include "camera.h"
+#include "input.h"
 
-Vector2 sensitivity = { 0.001f, 0.001f };
 
 Scene demo_scene;
 Model plane;
@@ -87,21 +87,18 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
 }
 
 void UpdateScene(float delta) {
-    Vector2 mouse_delta = GetMouseDelta();
-    demo_scene.player.rotation.x -= mouse_delta.x * sensitivity.x;
-    demo_scene.player.rotation.y += mouse_delta.y * sensitivity.y;
+    PlayerInput player_input = UpdateInput();
+    demo_scene.player.rotation.x -= player_input.mouse.x;
+    demo_scene.player.rotation.y += player_input.mouse.y;
 
-    char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
-    char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
-    bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
-    UpdateBody(&demo_scene.player, demo_scene.player.rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
+    UpdateBody(&demo_scene.player, demo_scene.player.rotation.x, player_input);
 
     UpdatePhysics(delta);
 
     float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
     demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
     
-    UpdateFPSCameraAnimated(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, forward, sideway, crouching, demo_scene.player.is_grounded);
+    UpdateFPSCameraAnimated(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, player_input, demo_scene.player.is_grounded);
 
     UpdateShader(&demo_scene.shaders[0], &demo_scene.camera);
 }
