@@ -15,13 +15,11 @@ dJointGroupID contactgroup;
 PlaneGeom planeGeom;
 dBodyID objects[numObj];
 dBodyID bullets[numBullets];
-dGeomID plane_geometry;
-dGeomID tower_geometry[4];
 Body playerBody;
 dContactGeom contact;
 
 
-static const int catBits[LAST_INDEX_CNT] = {
+const int catBits[LAST_INDEX_CNT] = {
     0x0001, ///< Plane category >          0001
     0x0002, ///< Player category >         0010
     0x0004, ///< Objects category >        0100
@@ -69,7 +67,7 @@ dBodyID createRandomObject(dSpaceID space, dWorldID world, int type) {
     return obj;
 }
 
-Body createPlayerBody(dSpaceID space, dWorldID world) {
+Body CreatePhysicsPlayerBody(Vector3 position) {
     dMass m;
     dMatrix3 R;
     dBodyID obj = dBodyCreate(world);
@@ -89,7 +87,7 @@ Body createPlayerBody(dSpaceID space, dWorldID world) {
     dGeomSetOffsetPosition(footGeom, 0, 0, 0.5);
 
     // give the body a position and rotation
-    dBodySetPosition(obj, 0, 5, 15);
+    dBodySetPosition(obj, position.x, position.y, position.z);
     dRFromAxisAndAngle(R, 1.0f, 0, 0, 90.0f * DEG2RAD);
     dBodySetRotation(obj, R);
 
@@ -98,9 +96,10 @@ Body createPlayerBody(dSpaceID space, dWorldID world) {
     // collision mask
     dGeomSetCategoryBits(geom, catBits[PLAYER]);
     dGeomSetCollideBits(geom, catBits[ALL] & (~catBits[PLAYER_BULLET]));
-    dBodySetGravityMode(geom, 8);
+    dBodySetGravityMode(geom, 8); // TODO: use this to remove gravity only to player
 
-    return (Body) { .body = obj, .geom = geom, .footGeom = footGeom };
+    playerBody = (Body){ .body = obj, .geom = geom, .footGeom = footGeom };
+    return playerBody;
 }
 
 dBodyID createBullet(dSpaceID space, dWorldID world) {
@@ -122,7 +121,7 @@ dBodyID createBullet(dSpaceID space, dWorldID world) {
     return obj;
 }
 
-PlaneGeom createStaticPlane(dSpaceID space, Model plane) {
+PlaneGeom createStaticMesh(dSpaceID space, Model plane) {
     int nV = plane.meshes[0].vertexCount;
     int* groundInd = RL_MALLOC(nV * sizeof(int));
     if (groundInd == NULL) { return (PlaneGeom) {0}; }
@@ -225,7 +224,7 @@ void drawBodyModel(dBodyID body, Model model) {
     DrawModel(model, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
 }
 
-void CreatePhysics(Model* plane) {
+void CreatePhysics() {
     // initialise and create the physics
     // TODO: move dInitODE2 to global initialization
     dInitODE2(0);
@@ -234,9 +233,6 @@ void CreatePhysics(Model* plane) {
     contactgroup = dJointGroupCreate(0);
     dWorldSetGravity(world, 0, 0, 0);
 
-    //planeGeom = createStaticPlane(space, *plane);
-    playerBody = createPlayerBody(space, world);
-
     for (int i = 0; i < numObj; i++) {
         objects[i] = createRandomObject(space, world, i);
     }
@@ -244,19 +240,6 @@ void CreatePhysics(Model* plane) {
     for (int i = 0; i < numBullets; i++) {
         bullets[i] = createBullet(space, world);
     }
-    plane_geometry = dCreatePlane(space, 0, 1, 0, 0);
-    dGeomSetCategoryBits(plane_geometry, catBits[PLANE]);
-    dGeomSetCollideBits(plane_geometry, catBits[ALL]);
-
-    for (int i = 0; i < 4; i++) {
-        tower_geometry[i] = dCreateBox(space, 16.f, 32.f, 16.f);
-        dGeomSetCategoryBits(tower_geometry[i], catBits[PLANE]);
-        dGeomSetCollideBits(tower_geometry[i], catBits[ALL]);
-    }
-    dGeomSetPosition(tower_geometry[0], 16.f, 16.f, 16.f);
-    dGeomSetPosition(tower_geometry[1], -16.f, 16.f, 16.f);
-    dGeomSetPosition(tower_geometry[2], -16.f, 16.f, -16.f);
-    dGeomSetPosition(tower_geometry[3], 16.f, 16.f, -16.f);
 }
 
 void DestroyPhysics() {
@@ -334,6 +317,28 @@ void DrawPhysics(Model plane, Model sphere, Model box) {
     */
 }
 
-bool IsPlayerGrounded() {
-    return dCollide(plane_geometry, playerBody.footGeom, 1, &contact, sizeof(dContactGeom));
+
+/*
+layer - bitmask which layers geometry belong to
+mask - bitmask of layers geometry collide against
+*/
+dGeomID CreatePhysicsPlane(Vector3 position, Vector3 normal, unsigned layer, unsigned mask) {
+    dGeomID geometry_id = dCreatePlane(space, normal.x, normal.y, normal.z, 0);
+    //dGeomSetPosition(geometry_id, position.x, position.y, position.z);
+
+    dGeomSetCategoryBits(geometry_id, layer);
+    dGeomSetCollideBits(geometry_id, mask);
+    return geometry_id;
+}
+
+dGeomID CreatePhysicsBox(Vector3 position, Vector3 size, unsigned layer, unsigned mask) {
+    dGeomID geometry_id = dCreateBox(space, size.x, size.y, size.z);
+    dGeomSetPosition(geometry_id, position.x, position.y, position.z);
+    dGeomSetCategoryBits(geometry_id, layer);
+    dGeomSetCollideBits(geometry_id, mask);
+    return geometry_id;
+}
+
+bool IsPhysicsPairColliding(dGeomID a, dGeomID b) {
+    return dCollide(a, b, 1, &contact, sizeof(dContactGeom));
 }

@@ -27,6 +27,7 @@ enum INDEX {
 
 extern dSpaceID space;
 extern Body playerBody;
+extern const int catBits[LAST_INDEX_CNT];
 
 
 // when objects potentially collide this callback is called
@@ -34,18 +35,26 @@ extern Body playerBody;
 // depending what object types collide.... lots of flexibility and power here!
 #define MAX_CONTACTS 8
 
-void CreatePhysics(Model* plane);
+void CreatePhysics();
 void DestroyPhysics();
 void UpdatePhysics(float delta_time);
 void DrawPhysics(Model plane, Model sphere, Model box);
 
 
-PlaneGeom createStaticPlane(dSpaceID space, Model plane);
+PlaneGeom createStaticMesh(dSpaceID space, Model plane);
 
 void drawBodyCylinder(dBodyID body, Model cylinder);
 
 void drawBodyModel(dBodyID body, Model model);
 
-bool IsPlayerGrounded();
+/* COLLIDER API */
+dGeomID CreatePhysicsPlane(Vector3 position, Vector3 normal, unsigned layer, unsigned mask);
+
+dGeomID CreatePhysicsBox(Vector3 position, Vector3 size, unsigned layer, unsigned mask);
+
+bool IsPhysicsPairColliding(dGeomID a, dGeomID b);
+
+// TEMP API
+Body CreatePhysicsPlayerBody(Vector3 position);
 
 #endif // PHYSICS_ODE_H

@@ -15,7 +15,7 @@ AppState app_demo_room = { Enter, Update, Exit, Draw, Gui };
 
 
 Vector2 sensitivity = { 0.001f, 0.001f };
-Character player;
+//Character player;
 Camera camera;
 Vector2 look_rotation = { 0 };
 float bob_timer;
@@ -32,7 +32,7 @@ static void Enter() {
     // Sets level physics and models
     CreateScene();
 
-    player = CreateBody(Vector3Zero());
+
     camera = (Camera){ 0 };
     camera.fovy = 60.f;
     camera.projection = CAMERA_PERSPECTIVE;
@@ -43,8 +43,7 @@ static void Enter() {
     headLerp = STAND_HEIGHT;
     lean = Vector2Zero();
 
-    float* pos = (float*)dBodyGetPosition(playerBody.body);
-    player.position = (Vector3){pos[0], pos[1], pos[2]};
+    Character player = demo_scene.player;
     camera.position = (Vector3){
             player.position.x,
             player.position.y + (BOTTOM_HEIGHT + headLerp),
@@ -77,23 +76,23 @@ static void Update() {
     char sideway = (IsKeyDown(KEY_D) - IsKeyDown(KEY_A));
     char forward = (IsKeyDown(KEY_W) - IsKeyDown(KEY_S));
     bool crouching = IsKeyDown(KEY_LEFT_CONTROL);
-    UpdateBody(&player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
+    UpdateBody(&demo_scene.player, look_rotation.x, sideway, forward, IsKeyPressed(KEY_SPACE), crouching);
 
     float delta = GetFrameTime();
     headLerp = Lerp(headLerp, (crouching ? CROUCH_HEIGHT : STAND_HEIGHT), 20.f * delta);
 
     UpdatePhysics(delta);
 
-    float* pos = (float*)dBodyGetPosition(playerBody.body);
-    player.position = (Vector3){ pos[0], pos[1], pos[2] };
+    float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
+    demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
 
     camera.position = (Vector3){
-        player.position.x,
-        player.position.y + (BOTTOM_HEIGHT + headLerp),
-        player.position.z,
+        demo_scene.player.position.x,
+        demo_scene.player.position.y + (BOTTOM_HEIGHT + headLerp),
+        demo_scene.player.position.z,
     };
 
-    if (player.is_grounded && (forward != 0 || sideway != 0)) {
+    if (demo_scene.player.is_grounded && (forward != 0 || sideway != 0)) {
         bob_timer += delta * 3.f;
         walk_lerp = Lerp(walk_lerp, 1.f, 10.f * delta);
         camera.fovy = Lerp(camera.fovy, 55.f, 5.f * delta);
@@ -130,7 +129,7 @@ static void Gui(){
     DrawText("Camera controls:", 15, 15, 10, BLACK);
     DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
     DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
-    DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { player.velocity.x, player.velocity.z })), 15, 60, 10, BLACK);
+    DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { demo_scene.player.velocity.x, demo_scene.player.velocity.z })), 15, 60, 10, BLACK);
 }
 
 static void Exit() {
@@ -138,6 +137,6 @@ static void Exit() {
     EnableCursor();
     is_mouse_disabled = false;
     UnloadScene();
-    UnloadSound(player.sound_jump);
+    UnloadSound(demo_scene.player.sound_jump);
 }
 

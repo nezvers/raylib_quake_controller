@@ -10,11 +10,11 @@
 #define TEXTURE_COUNT 1
 #define SHADER_COUNT 1
 
-
 typedef struct {
     int ambientLoc;
     int fogDensityLoc;
     float fogDensity;
+    Shader shader;
     Light light;
 }ShaderAttributes;
 
@@ -29,12 +29,13 @@ typedef struct {
     Camera camera;
     Character player;
     StaticMesh* static_list;
-    //StaticMesh static_list[MODEL_COUNT];
-    Texture2D textures[TEXTURE_COUNT];
-    Shader shaders[SHADER_COUNT];
+    Texture2D* textures;
+    ShaderAttributes* shaders;
 }Scene;
 
-Shader CreateShader(ShaderAttributes* attrib);
+extern Scene demo_scene;
+
+ShaderAttributes CreateShader();
 
 void CreateScene();
 
@@ -43,5 +44,7 @@ void UpdateScene(Camera* camera);
 void DrawScene();
 
 void UnloadScene();
+
+bool IsPlayerGrounded();
 
 #endif // SCENE_H

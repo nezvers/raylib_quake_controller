@@ -7,11 +7,6 @@
 #include "stb_ds.h"
 
 
-ShaderAttributes shader_attrib;
-Shader shader;
-
-Model model_list[MODEL_COUNT];
-Vector3 position_list[MODEL_COUNT];
 Scene demo_scene;
 Model plane;
 Model box;
@@ -25,6 +20,8 @@ void SceneAddPlane(Scene* scene, Vector2 size, Vector3 position, Shader shadr, T
     _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
     _static_mesh.model.materials[0].shader = shadr;
     _static_mesh.position = position;
+
+    _static_mesh.geom = CreatePhysicsPlane(Vector3Zero(), (Vector3) { 0, 1, 0 }, catBits[PLANE], catBits[ALL]);
     // TODO: Generate physical collider
     arrput(scene->static_list, _static_mesh);
 }
@@ -35,6 +32,9 @@ void SceneAddCube(Scene* scene, Vector3 size, Vector3 position, Shader shadr, Te
     _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
     _static_mesh.model.materials[0].shader = shadr;
     _static_mesh.position = position;
+
+    _static_mesh.geom = CreatePhysicsBox(position, size, catBits[PLANE], catBits[ALL]);
+
     // TODO: Generate physical collider
     arrput(scene->static_list, _static_mesh);
 }
@@ -42,15 +42,21 @@ void SceneAddCube(Scene* scene, Vector3 size, Vector3 position, Shader shadr, Te
 void CreateModels() {
     demo_scene.static_list = NULL;
     // Assign texture and shader
-    demo_scene.textures[0] = LoadTexture(RESOURCES_PATH"texel_checker.png");
-    demo_scene.shaders[0] = shader;
+    demo_scene.textures = NULL;
+    Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"texel_checker.png");
+    arrput(demo_scene.textures, tex_cheker);
+
+
+    ShaderAttributes shader_attrib = CreateShader();
+    demo_scene.shaders = NULL;
+    arrput(demo_scene.shaders, shader_attrib);
 
     // Ground
-    SceneAddPlane(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shaders[0], demo_scene.textures[0]);
-    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
-    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
-    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
-    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shaders[0], demo_scene.textures[0]);
+    SceneAddPlane(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shaders[0].shader, tex_cheker);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shaders[0].shader, tex_cheker);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shaders[0].shader, tex_cheker);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shaders[0].shader, tex_cheker);
+    SceneAddCube(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shaders[0].shader, tex_cheker);
 
     Texture _tex = LoadTexture(RESOURCES_PATH"texel_checker.png");
     texturePlane = LoadTexture(RESOURCES_PATH"grass-texture.png");
@@ -65,20 +71,20 @@ void CreateModels() {
 }
 
 void CreateScene() {
-    shader = CreateShader(&shader_attrib);
+    CreatePhysics();
     CreateModels();
-    CreatePhysics(&plane);
+    demo_scene.player = CreateBody(Vector3Zero());
 }
 
-void UpdateShader(Shader* shader, Camera* camera, ShaderAttributes* attrib) {
-    SetShaderValue(*shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
+    SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
 
     // Update the light shader with the camera view position
-    SetShaderValue(*shader, shader->locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
+    SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
 }
 
 void UpdateScene(Camera* camera) {
-    UpdateShader(&shader, camera, &shader_attrib);
+    UpdateShader(&demo_scene.shaders[0], camera);
 }
 
 void DrawScene() {
@@ -93,34 +99,47 @@ void DrawScene() {
 
 void UnloadScene() {
     arrfree(demo_scene.static_list);
-    UnloadShader(shader);
+    arrfree(demo_scene.shaders);
+    for (int i = 0; i < arrlen(demo_scene.textures); i++) {
+        UnloadTexture(demo_scene.textures[i]);
+    }
+    arrfree(demo_scene.textures);
+    for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
+        UnloadModel(demo_scene.static_list[i].model);
+    }
+    arrfree(demo_scene.static_list);
+
     UnloadTexture(texture);
     UnloadTexture(texturePlane);
     UnloadModel(plane);
     UnloadModel(sphere);
     UnloadModel(box);
-    for (int i = 0; i < MODEL_COUNT; i++) {
-        UnloadModel(model_list[i]);
-    }
+
     DestroyPhysics();
 }
 
-Shader CreateShader(ShaderAttributes* attrib) {
+ShaderAttributes CreateShader() {
+    ShaderAttributes attrib = { 0 };
     // Load shader and set up some uniforms
-    Shader shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"fog.fs");
-    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    attrib.shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"fog.fs");
+    attrib.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(attrib.shader, "matModel");
+    attrib.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(attrib.shader, "viewPos");
 
     // Ambient light level
-    attrib->ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, attrib->ambientLoc, (float[4]) { 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+    attrib.ambientLoc = GetShaderLocation(attrib.shader, "ambient");
+    SetShaderValue(attrib.shader, attrib.ambientLoc, (float[4]) { 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
 
-    attrib->fogDensity = 0.025f;
-    attrib->fogDensityLoc = GetShaderLocation(shader, "fogDensity");
-    SetShaderValue(shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+    attrib.fogDensity = 0.025f;
+    attrib.fogDensityLoc = GetShaderLocation(attrib.shader, "fogDensity");
+    SetShaderValue(attrib.shader, attrib.fogDensityLoc, &attrib.fogDensity, SHADER_UNIFORM_FLOAT);
 
     // Using just 1 point lights
-    attrib->light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, Vector3Zero(), WHITE, shader);
+    attrib.light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, Vector3Zero(), WHITE, attrib.shader);
 
-    return shader;
+    return attrib;
+}
+
+
+bool IsPlayerGrounded() {
+    return IsPhysicsPairColliding(demo_scene.player.phys.footGeom, demo_scene.static_list[0].geom);
 }

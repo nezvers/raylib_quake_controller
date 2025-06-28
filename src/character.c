@@ -126,5 +126,6 @@ void UpdateCameraAngle(Camera* camera, Vector2* rot, float head_time, float walk
 }
 
 Character CreateBody(Vector3 position) {
-    return (Character) { position, Vector3Zero(), Vector3Zero(), false, sound_list[JUMP_HUH]};
+    Character character = (Character){ position, Vector3Zero(), Vector3Zero(), false, sound_list[JUMP_HUH], CreatePhysicsPlayerBody(position) };
+    return character;
 }

@@ -49,7 +49,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if (${PLATFORM} STREQUAL "Web")
 # unset(PENTIUM CACHE)
-set(PENTIUM FALSE CACHE BOOL "Enable Pentium-specific code" FORCE)
+# set(PENTIUM FALSE CACHE BOOL "Enable Pentium-specific code" FORCE)
 # target_compile_definitions(ODE PRIVATE __linux__)
 endif()
 FetchContent_MakeAvailable(ode)
