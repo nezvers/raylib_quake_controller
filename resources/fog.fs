@@ -37,6 +37,7 @@ uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
 uniform float fogDensity;
+uniform float strength;
 
 void main()
 {
@@ -56,7 +57,7 @@ void main()
             vec3 light = vec3(0.0);
 
             if (lights[i].type == LIGHT_DIRECTIONAL) light = -normalize(lights[i].target - lights[i].position);
-            if (lights[i].type == LIGHT_POINT) light = normalize(lights[i].position - fragPosition);
+            if (lights[i].type == LIGHT_POINT) light = normalize(lights[i].position - fragPosition) * strength;
 
             float NdotL = max(dot(normal, light), 0.0);
             lightDot += lights[i].color.rgb*NdotL;

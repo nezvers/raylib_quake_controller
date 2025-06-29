@@ -28,9 +28,15 @@ typedef struct {
 } StaticMesh;
 
 typedef struct {
+    dBodyID body;
+    Model model;
+} DynamicMesh;
+
+typedef struct {
     Camera camera;
     Character player;
     StaticMesh* static_list;
+    DynamicMesh* dynamic_list;
     Texture2D* texture_list;
     ShaderAttributes* shader_list;
     Model* model_list;

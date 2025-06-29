@@ -10,79 +10,85 @@
 
 
 Scene demo_scene;
-/*
-Model plane;
-Model box;
-Model sphere;
-Texture texture;
-Texture2D texturePlane;
-*/
 
 void SceneAddPlaneStatic(Scene* scene, Vector2 size, Vector3 position, Shader shadr, Texture texture) {
 
-    StaticMesh _static_mesh = { 0 };
-    _static_mesh.model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
-    _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    _static_mesh.model.materials[0].shader = shadr;
-    _static_mesh.position = position;
+    StaticMesh static_mesh = { 0 };
+    static_mesh.model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
+    static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    static_mesh.model.materials[0].shader = shadr;
+    static_mesh.position = position;
 
-    _static_mesh.geom = CreatePhysicsPlaneStatic(Vector3Zero(), (Vector3) { 0, 1, 0 }, catBits[PLANE], catBits[ALL]);
-    arrput(scene->static_list, _static_mesh);
+    static_mesh.geom = CreatePhysicsPlaneStatic(Vector3Zero(), (Vector3) { 0, 1, 0 }, catBits[STATIC], catBits[ALL]);
+    arrput(scene->static_list, static_mesh);
 }
 
 void SceneAddCubeStatic(Scene* scene, Vector3 size, Vector3 position, Shader shadr, Texture texture) {
-    StaticMesh _static_mesh = { 0 };
-    _static_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
-    _static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    _static_mesh.model.materials[0].shader = shadr;
-    _static_mesh.position = position;
+    StaticMesh static_mesh = { 0 };
+    static_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
+    static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    static_mesh.model.materials[0].shader = shadr;
+    static_mesh.position = position;
 
-    _static_mesh.geom = CreatePhysicsBoxStatic(position, size, catBits[PLANE], catBits[ALL]);
-    arrput(scene->static_list, _static_mesh);
+    static_mesh.geom = CreatePhysicsBoxStatic(position, size, catBits[STATIC], catBits[ALL]);
+    arrput(scene->static_list, static_mesh);
+}
+
+void SceneAddCubeDynamic(Scene* scene, Vector3 position, Vector3 rotation, Vector3 size, Shader shadr, Texture texture) {
+    DynamicMesh dynamic_mesh = { 0 };
+    dynamic_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
+    dynamic_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    dynamic_mesh.model.materials[0].shader = shadr;
+
+    dynamic_mesh.body = CreatePhysicsBodyBoxDynamic(position, rotation, size, catBits[OBJS], catBits[ALL]);
+    arrput(scene->dynamic_list, dynamic_mesh);
+}
+
+void SceneAddCubeSphere(Scene* scene, Vector3 position, Vector3 rotation, float radius, Shader shadr, Texture texture) {
+    DynamicMesh dynamic_mesh = { 0 };
+    dynamic_mesh.model = LoadModelFromMesh(GenMeshSphere(radius, 10, 10));
+    dynamic_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    dynamic_mesh.model.materials[0].shader = shadr;
+
+    dynamic_mesh.body = CreatePhysicsBodySphereDynamic(position, rotation, radius, catBits[OBJS], catBits[ALL]);
+    arrput(scene->dynamic_list, dynamic_mesh);
 }
 
 
-
+// Mockup for loading a scene
 void CreateModels() {
     demo_scene.static_list = NULL;
+    demo_scene.dynamic_list = NULL;
+
     // Assign texture and shader
     demo_scene.texture_list = NULL;
     Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"texel_checker.png");
     arrput(demo_scene.texture_list, tex_cheker);
 
-
-    ShaderAttributes shader_attrib = CreateShader();
     demo_scene.shader_list = NULL;
+    ShaderAttributes shader_attrib = CreateShader();
     arrput(demo_scene.shader_list, shader_attrib);
 
     // Ground
     demo_scene.model_list = NULL;
 
     const int shader_ID = 0;
+    // Static
     SceneAddPlaneStatic(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
 
-    /*
-    Texture _tex = LoadTexture(RESOURCES_PATH"texel_checker.png");
-    texturePlane = LoadTexture(RESOURCES_PATH"grass-texture.png");
-
-    plane = LoadModel(RESOURCES_PATH"grass-plane.obj");
-    box = LoadModelFromMesh(GenMeshCube(1, 1, 1));
-    sphere = LoadModelFromMesh(GenMeshSphere(.5, 32, 32));
-
-    box.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = _tex;
-    sphere.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = _tex;
-    plane.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texturePlane;
-    */
+    // Dynamic
+    SceneAddCubeDynamic(&demo_scene, (Vector3) { 0.f, 1.f, -0.f }, (Vector3) { 0, 0, 0 }, (Vector3) { 1.f, 1.f, 1.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    SceneAddCubeSphere(&demo_scene, (Vector3) { 0.f, 2.f, -0.f }, (Vector3) { 0, 0, 0 }, 0.5f, demo_scene.shader_list[shader_ID].shader, tex_cheker);
 }
 
 void CreateScene() {
     CreatePhysics();
     CreateModels();
-    demo_scene.player = CreateBody(Vector3Zero(), Vector2Zero());
+    demo_scene.player = CreateBody((Vector3) {0,1,3}, Vector2Zero());
     demo_scene.camera = CreateCamera(demo_scene.player.position, &demo_scene.player.rotation);
 }
 
@@ -91,7 +97,7 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
 
     static float light_t = 0.f;
     light_t += GetFrameTime();
-    attrib->lightStrength = sin(light_t) * 0.5f + 0.5f;
+    attrib->lightStrength = sin(light_t) * 0.3f + 0.6f;
     SetShaderValue(attrib->shader, attrib->strengthLoc, &attrib->lightStrength, SHADER_UNIFORM_FLOAT);
 
     // Update the light shader with the camera view position
@@ -124,9 +130,16 @@ void DrawScene() {
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
         DrawModel(demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
     }
+    for (int i = 0; i < arrlen(demo_scene.dynamic_list); i++) {
+        DynamicMesh dynamic_mesh = demo_scene.dynamic_list[i];
+        SetPhysicsTransform(
+            (float*)dBodyGetPosition(dynamic_mesh.body),
+            (float*)dBodyGetRotation(dynamic_mesh.body),
+            &dynamic_mesh.model.transform);
+        DrawModel(dynamic_mesh.model, Vector3Zero(), 1.0f, WHITE);
+    }
+
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
-    //DrawModel(plane, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
-    //DrawPhysics(plane, sphere, box);
 
     EndMode3D();
 }

@@ -10,15 +10,9 @@ dSpaceID space;
 dWorldID world;
 dJointGroupID contactgroup;
 
-#define numObj 200  // 100 boxes, 100 spheres, 100 cylinders
-#define numBullets 50  // max bullets
 PlaneGeom planeGeom;
 Body playerBody;
 dContactGeom contact;
-/*
-dBodyID objects[numObj];
-dBodyID bullets[numBullets];
-*/
 
 
 const int catBits[LAST_INDEX_CNT] = {
@@ -28,46 +22,6 @@ const int catBits[LAST_INDEX_CNT] = {
     0x0008, ///< Player bullets category > 1000
     ~0L     ///< All categories >          11111111111111111111111111111111
 };
-
-dBodyID createRandomObject(dSpaceID space, dWorldID world, int type) {
-    dBodyID obj = dBodyCreate(world);
-    dGeomID geom;
-    dMatrix3 R;
-    dMass m;
-
-    // create either a box or sphere with the apropriate mass
-    if (type < numObj / 2) {
-        geom = dCreateBox(space, 1, 1, 1);
-        dMassSetBoxTotal(&m, 1, 0.5, 0.5, 0.5);
-    }
-    else {
-        geom = dCreateSphere(space, 0.5);
-        dMassSetSphereTotal(&m, 1, 0.5);
-    }
-
-    // set the bodies mass and the newly created geometry
-    dGeomSetBody(geom, obj);
-    dBodySetMass(obj, &m);
-
-    // collision mask
-    dGeomSetCategoryBits(geom, catBits[OBJS]);
-    dGeomSetCollideBits(geom, catBits[ALL]);
-
-    // give the body a random position and rotation
-    dBodySetPosition(obj,
-        dRandReal() * 10 - 5,
-        dRandInt(10) + 4,
-        dRandReal() * 10 - 5);
-
-    dRFromAxisAndAngle(R,
-        dRandReal() * 2.0 - 1.0,
-        dRandReal() * 2.0 - 1.0,
-        dRandReal() * 2.0 - 1.0,
-        dRandReal() * 10.0 - 5.0);
-
-    dBodySetRotation(obj, R);
-    return obj;
-}
 
 Body CreatePhysicsPlayerBody(Vector3 position) {
     dMass m;
@@ -105,6 +59,7 @@ Body CreatePhysicsPlayerBody(Vector3 position) {
     return playerBody;
 }
 
+// TODO: remove
 dBodyID createBullet(dSpaceID space, dWorldID world) {
     dBodyID obj = dBodyCreate(world);
     dGeomID geom;
@@ -124,6 +79,7 @@ dBodyID createBullet(dSpaceID space, dWorldID world) {
     return obj;
 }
 
+// TODO: refactor
 PlaneGeom createStaticMesh(dSpaceID space, Model plane) {
     int nV = plane.meshes[0].vertexCount;
     int* groundInd = RL_MALLOC(nV * sizeof(int));
@@ -137,7 +93,7 @@ PlaneGeom createStaticMesh(dSpaceID space, Model plane) {
         groundInd, nV,
         3 * sizeof(int));
     dGeomID planeGeom = dCreateTriMesh(space, triData, NULL, NULL, NULL);
-    dGeomSetCategoryBits(planeGeom, catBits[PLANE]);
+    dGeomSetCategoryBits(planeGeom, catBits[STATIC]);
     dGeomSetCollideBits(planeGeom, catBits[ALL]);
 
     return (PlaneGeom) { .geom = planeGeom, .indexes = groundInd };
@@ -210,26 +166,6 @@ void setTransformCylinder(const float pos[3], const float R[12], Matrix* matrix,
     matrix->m15 = nMatrix.m15;
 }
 
-
-
-void drawBodyCylinder(dBodyID body, Model cylinder) {
-    float length = 1.0f;
-    setTransformCylinder(
-        (float*)dBodyGetPosition(body),
-        (float*)dBodyGetRotation(body),
-        &cylinder.transform,
-        length);
-    DrawModel(cylinder, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
-}
-
-void drawBodyModel(dBodyID body, Model model) {
-    SetPhysicsTransform(
-        (float*)dBodyGetPosition(body),
-        (float*)dBodyGetRotation(body),
-        &model.transform);
-    DrawModel(model, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
-}
-
 void CreatePhysics() {
     // initialise and create the physics
     // TODO: move dInitODE2 to global initialization
@@ -238,15 +174,6 @@ void CreatePhysics() {
     space = dHashSpaceCreate(NULL);
     contactgroup = dJointGroupCreate(0);
     dWorldSetGravity(world, 0, -9.8, 0);
-    /*
-    for (int i = 0; i < numObj; i++) {
-        objects[i] = createRandomObject(space, world, i);
-    }
-
-    for (int i = 0; i < numBullets; i++) {
-        bullets[i] = createBullet(space, world);
-    }
-    */
 }
 
 void DestroyPhysics() {
@@ -309,27 +236,6 @@ void UpdatePhysics(float delta_time) {
     dJointGroupEmpty(contactgroup);
 }
 
-void DrawPhysics(Model plane, Model sphere, Model box) {
-    /*
-    for (int i = 0; i < numObj; i++) {
-        if (i < numObj / 2) {
-            drawBodyModel(objects[i], box);
-        }
-        else {
-            drawBodyModel(objects[i], sphere);
-        }
-    }
-    */
-    /*
-    for (int i = 0; i < numBullets; i++) {
-        dBodyID current_bullet_body = bullets[i];
-        drawBodyModel(current_bullet_body, bullet);
-    }
-    DrawModel(aim, cameraAim.position, 1.0f, RED);
-    */
-}
-
-
 /*
 layer - bitmask which layers geometry belong to
 mask - bitmask of layers geometry collide against
@@ -371,6 +277,7 @@ dBodyID CreatePhysicsBodyBoxDynamic(Vector3 position, Vector3 rotation, Vector3 
     dBodySetRotation(obj, R);
 
     dBodySetPosition(obj, position.x, position.y, position.z);
+    return obj;
 }
 
 dBodyID CreatePhysicsBodySphereDynamic(Vector3 position, Vector3 rotation, float radius, unsigned layer, unsigned mask) {
@@ -393,6 +300,7 @@ dBodyID CreatePhysicsBodySphereDynamic(Vector3 position, Vector3 rotation, float
     dBodySetRotation(obj, R);
 
     dBodySetPosition(obj, position.x, position.y, position.z);
+    return obj;
 }
 
 bool IsPhysicsPairColliding(dGeomID a, dGeomID b) {
