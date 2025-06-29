@@ -48,9 +48,13 @@ void drawBodyCylinder(dBodyID body, Model cylinder);
 void drawBodyModel(dBodyID body, Model model);
 
 /* COLLIDER API */
-dGeomID CreatePhysicsPlane(Vector3 position, Vector3 normal, unsigned layer, unsigned mask);
+dGeomID CreatePhysicsPlaneStatic(Vector3 position, Vector3 normal, unsigned layer, unsigned mask);
 
-dGeomID CreatePhysicsBox(Vector3 position, Vector3 size, unsigned layer, unsigned mask);
+dGeomID CreatePhysicsBoxStatic(Vector3 position, Vector3 size, unsigned layer, unsigned mask);
+
+dBodyID CreatePhysicsBodyBoxDynamic(Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask);
+
+dBodyID CreatePhysicsBodySphereDynamic(Vector3 position, Vector3 rotation, float radius, unsigned layer, unsigned mask);
 
 bool IsPhysicsPairColliding(dGeomID a, dGeomID b);
 

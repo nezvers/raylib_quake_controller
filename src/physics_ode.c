@@ -13,10 +13,12 @@ dJointGroupID contactgroup;
 #define numObj 200  // 100 boxes, 100 spheres, 100 cylinders
 #define numBullets 50  // max bullets
 PlaneGeom planeGeom;
-dBodyID objects[numObj];
-dBodyID bullets[numBullets];
 Body playerBody;
 dContactGeom contact;
+/*
+dBodyID objects[numObj];
+dBodyID bullets[numBullets];
+*/
 
 
 const int catBits[LAST_INDEX_CNT] = {
@@ -96,7 +98,8 @@ Body CreatePhysicsPlayerBody(Vector3 position) {
     // collision mask
     dGeomSetCategoryBits(geom, catBits[PLAYER]);
     dGeomSetCollideBits(geom, catBits[ALL] & (~catBits[PLAYER_BULLET]));
-    dBodySetGravityMode(geom, 8); // TODO: use this to remove gravity only to player
+    dBodySetGravityMode(obj, 8); // TODO: use this to remove gravity only to player
+    int mode = dBodyGetGravityMode(obj);
 
     playerBody = (Body){ .body = obj, .geom = geom, .footGeom = footGeom };
     return playerBody;
@@ -141,7 +144,7 @@ PlaneGeom createStaticMesh(dSpaceID space, Model plane) {
 }
 
 // set a raylib model matrix from an ODE rotation matrix and position
-void setTransform(const float pos[3], const float R[12], Matrix* matrix){
+void SetPhysicsTransform(const float pos[3], const float R[12], Matrix* matrix){
     matrix->m0 = R[0];
     matrix->m1 = R[4];
     matrix->m2 = R[8];
@@ -182,10 +185,11 @@ void setTransformCylinder(const float pos[3], const float R[12], Matrix* matrix,
 
     // rotate because the cylinder axis looks diferent
     Matrix r = MatrixRotateX(DEG2RAD * 90);
+    Matrix nMatrix = MatrixMultiply(r, m);
+
     // move the origin of the model to the center
     // -1.5 is because is half o 3 (the length of the cylinder)
-    Matrix t = MatrixTranslate(0, length / 2 * -1, 0);
-    Matrix nMatrix = MatrixMultiply(r, m);
+    Matrix t = MatrixTranslate(0, length * -0.5f, 0);
     nMatrix = MatrixMultiply(t, nMatrix);
 
     matrix->m0 = nMatrix.m0;
@@ -206,6 +210,8 @@ void setTransformCylinder(const float pos[3], const float R[12], Matrix* matrix,
     matrix->m15 = nMatrix.m15;
 }
 
+
+
 void drawBodyCylinder(dBodyID body, Model cylinder) {
     float length = 1.0f;
     setTransformCylinder(
@@ -217,7 +223,7 @@ void drawBodyCylinder(dBodyID body, Model cylinder) {
 }
 
 void drawBodyModel(dBodyID body, Model model) {
-    setTransform(
+    SetPhysicsTransform(
         (float*)dBodyGetPosition(body),
         (float*)dBodyGetRotation(body),
         &model.transform);
@@ -231,8 +237,8 @@ void CreatePhysics() {
     world = dWorldCreate();
     space = dHashSpaceCreate(NULL);
     contactgroup = dJointGroupCreate(0);
-    dWorldSetGravity(world, 0, 0, 0);
-
+    dWorldSetGravity(world, 0, -9.8, 0);
+    /*
     for (int i = 0; i < numObj; i++) {
         objects[i] = createRandomObject(space, world, i);
     }
@@ -240,6 +246,7 @@ void CreatePhysics() {
     for (int i = 0; i < numBullets; i++) {
         bullets[i] = createBullet(space, world);
     }
+    */
 }
 
 void DestroyPhysics() {
@@ -290,17 +297,20 @@ void UpdatePhysics(float delta_time) {
 
     // step the world
     if (delta_time > 0.f) {
+        /*
         float* phys_velocity;
         for (int i = 0; i < numObj; i++) {
             phys_velocity = dBodyGetLinearVel(objects[i]);
             dBodySetLinearVel(objects[i], phys_velocity[0], phys_velocity[1] - 9.8 * delta_time, phys_velocity[2]);
         }
+        */
         dWorldQuickStep(world, delta_time);
     }
     dJointGroupEmpty(contactgroup);
 }
 
 void DrawPhysics(Model plane, Model sphere, Model box) {
+    /*
     for (int i = 0; i < numObj; i++) {
         if (i < numObj / 2) {
             drawBodyModel(objects[i], box);
@@ -309,6 +319,7 @@ void DrawPhysics(Model plane, Model sphere, Model box) {
             drawBodyModel(objects[i], sphere);
         }
     }
+    */
     /*
     for (int i = 0; i < numBullets; i++) {
         dBodyID current_bullet_body = bullets[i];
@@ -323,7 +334,7 @@ void DrawPhysics(Model plane, Model sphere, Model box) {
 layer - bitmask which layers geometry belong to
 mask - bitmask of layers geometry collide against
 */
-dGeomID CreatePhysicsPlane(Vector3 position, Vector3 normal, unsigned layer, unsigned mask) {
+dGeomID CreatePhysicsPlaneStatic(Vector3 position, Vector3 normal, unsigned layer, unsigned mask) {
     dGeomID geometry_id = dCreatePlane(space, normal.x, normal.y, normal.z, 0);
     //dGeomSetPosition(geometry_id, position.x, position.y, position.z);
 
@@ -332,12 +343,56 @@ dGeomID CreatePhysicsPlane(Vector3 position, Vector3 normal, unsigned layer, uns
     return geometry_id;
 }
 
-dGeomID CreatePhysicsBox(Vector3 position, Vector3 size, unsigned layer, unsigned mask) {
+dGeomID CreatePhysicsBoxStatic(Vector3 position, Vector3 size, unsigned layer, unsigned mask) {
     dGeomID geometry_id = dCreateBox(space, size.x, size.y, size.z);
     dGeomSetPosition(geometry_id, position.x, position.y, position.z);
     dGeomSetCategoryBits(geometry_id, layer);
     dGeomSetCollideBits(geometry_id, mask);
     return geometry_id;
+}
+
+dBodyID CreatePhysicsBodyBoxDynamic(Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask) {
+    dBodyID obj = dBodyCreate(world);
+    dGeomID geom;
+    dMatrix3 R;
+    dMass m;
+
+    geom = dCreateBox(space, size.x, size.y, size.z);
+    dMassSetBoxTotal(&m, 1, 0.5, 0.5, 0.5);
+
+    // set the bodies mass and the newly created geometry
+    dGeomSetBody(geom, obj);
+    dBodySetMass(obj, &m);
+
+    dGeomSetCategoryBits(geom, layer);
+    dGeomSetCollideBits(geom, mask);
+
+    dRFromEulerAngles(R, rotation.x, rotation.y, rotation.z);
+    dBodySetRotation(obj, R);
+
+    dBodySetPosition(obj, position.x, position.y, position.z);
+}
+
+dBodyID CreatePhysicsBodySphereDynamic(Vector3 position, Vector3 rotation, float radius, unsigned layer, unsigned mask) {
+    dBodyID obj = dBodyCreate(world);
+    dGeomID geom;
+    dMatrix3 R;
+    dMass m;
+
+    geom = dCreateSphere(space, radius);
+    dMassSetSphereTotal(&m, 1, radius);
+
+    // set the bodies mass and the newly created geometry
+    dGeomSetBody(geom, obj);
+    dBodySetMass(obj, &m);
+
+    dGeomSetCategoryBits(geom, layer);
+    dGeomSetCollideBits(geom, mask);
+
+    dRFromEulerAngles(R, rotation.x, rotation.y, rotation.z);
+    dBodySetRotation(obj, R);
+
+    dBodySetPosition(obj, position.x, position.y, position.z);
 }
 
 bool IsPhysicsPairColliding(dGeomID a, dGeomID b) {

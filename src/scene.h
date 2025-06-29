@@ -22,15 +22,16 @@ typedef struct {
     Vector3 position;
     Vector3 rotation;
     dGeomID geom;
-    Model model;
+    Model* model;
 } StaticMesh;
 
 typedef struct {
     Camera camera;
     Character player;
     StaticMesh* static_list;
-    Texture2D* textures;
-    ShaderAttributes* shaders;
+    Texture2D* texture_list;
+    ShaderAttributes* shader_list;
+    Model* model_list;
 }Scene;
 
 extern Scene demo_scene;

@@ -23,7 +23,7 @@ void UpdateBody(Character* body, float rot, PlayerInput input) {
     float* phys_velocity = dBodyGetLinearVel(playerBody.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
 
-    body->velocity.y -= GRAVITY * delta;
+    body->velocity.y -= GRAVITY * delta - 9.8 * delta; // 9.8 is a hack to counter physics gravity on top of character controller gravity.
 
     if (body->is_grounded && input.jump) {
         body->velocity.y = JUMP_FORCE;
