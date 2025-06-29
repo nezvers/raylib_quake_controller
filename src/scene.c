@@ -58,11 +58,12 @@ void CreateModels() {
     // Ground
     demo_scene.model_list = NULL;
 
-    SceneAddPlaneStatic(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shader_list[0].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shader_list[0].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shader_list[0].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shader_list[0].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shader_list[0].shader, tex_cheker);
+    const int shader_ID = 0;
+    SceneAddPlaneStatic(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
 
     /*
     Texture _tex = LoadTexture(RESOURCES_PATH"texel_checker.png");
@@ -116,7 +117,7 @@ void DrawScene() {
 
     // Draw level
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
-        DrawModel(*demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
+        DrawModel(demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
     }
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
     //DrawModel(plane, (Vector3) { 0, 0, 0 }, 1.0f, WHITE);
