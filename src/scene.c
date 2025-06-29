@@ -89,6 +89,11 @@ void CreateScene() {
 void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
 
+    static float light_t = 0.f;
+    light_t += GetFrameTime();
+    attrib->lightStrength = sin(light_t) * 0.5f + 0.5f;
+    SetShaderValue(attrib->shader, attrib->strengthLoc, &attrib->lightStrength, SHADER_UNIFORM_FLOAT);
+
     // Update the light shader with the camera view position
     SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
 }
@@ -152,20 +157,24 @@ void UnloadScene() {
 ShaderAttributes CreateShader() {
     ShaderAttributes attrib = { 0 };
     // Load shader and set up some uniforms
-    attrib.shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"fog.fs");
+    attrib.shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"lighting.fs");
     attrib.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(attrib.shader, "matModel");
     attrib.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(attrib.shader, "viewPos");
 
     // Ambient light level
     attrib.ambientLoc = GetShaderLocation(attrib.shader, "ambient");
-    SetShaderValue(attrib.shader, attrib.ambientLoc, (float[4]) { 0.2f, 0.2f, 0.2f, 1.0f }, SHADER_UNIFORM_VEC4);
+    SetShaderValue(attrib.shader, attrib.ambientLoc, (float[4]) { 0.001f, 0.001f, 0.001f, 1.0f }, SHADER_UNIFORM_VEC4);
 
     attrib.fogDensity = 0.025f;
     attrib.fogDensityLoc = GetShaderLocation(attrib.shader, "fogDensity");
     SetShaderValue(attrib.shader, attrib.fogDensityLoc, &attrib.fogDensity, SHADER_UNIFORM_FLOAT);
 
+    attrib.lightStrength = 0.1f;
+    attrib.strengthLoc = GetShaderLocation(attrib.shader, "strength");
+    SetShaderValue(attrib.shader, attrib.strengthLoc, &attrib.lightStrength, SHADER_UNIFORM_FLOAT);
+
     // Using just 1 point lights
-    attrib.light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, Vector3Zero(), WHITE, attrib.shader);
+    attrib.light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, (Vector3) { 0, 4, 0 }, (Color) {5,5,5,255}, attrib.shader);
 
     return attrib;
 }

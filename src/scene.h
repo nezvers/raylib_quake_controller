@@ -13,7 +13,9 @@
 typedef struct {
     int ambientLoc;
     int fogDensityLoc;
+    int strengthLoc;
     float fogDensity;
+    float lightStrength;
     Shader shader;
     Light light;
 }ShaderAttributes;
