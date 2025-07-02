@@ -24,7 +24,7 @@ typedef struct {
     Vector3 position;
     Vector3 rotation;
     dGeomID geom;
-    Model model;
+    int model;
 } StaticMesh;
 
 typedef struct {

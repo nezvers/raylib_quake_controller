@@ -3,35 +3,40 @@
 #include "raymath.h"
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
-#define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 #include "camera.h"
 #include "input.h"
+#include "models.h"
 
 
 Scene demo_scene;
 
-void SceneAddPlaneStatic(Scene* scene, Vector2 size, Vector3 position, Shader shadr, Texture texture) {
-
+int SceneAddPlaneStatic(Scene* scene, Vector3 position, int model_id, dGeomID geom_id) {
     StaticMesh static_mesh = { 0 };
-    static_mesh.model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
-    static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    static_mesh.model.materials[0].shader = shadr;
+    static_mesh.model = model_id;
     static_mesh.position = position;
+    static_mesh.geom = geom_id;
 
-    static_mesh.geom = CreatePhysicsPlaneStatic(Vector3Zero(), (Vector3) { 0, 1, 0 }, catBits[STATIC], catBits[ALL]);
+    int i = arrlen(scene->static_list);
     arrput(scene->static_list, static_mesh);
+    if (arrlen(scene->static_list) > i) {
+        return i;
+    }
+    return -1;
 }
 
-void SceneAddCubeStatic(Scene* scene, Vector3 size, Vector3 position, Shader shadr, Texture texture) {
+int SceneAddCubeStatic(Scene* scene, Vector3 position, int model_id, dGeomID geom_id) {
     StaticMesh static_mesh = { 0 };
-    static_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
-    static_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    static_mesh.model.materials[0].shader = shadr;
+    static_mesh.model = model_id;
     static_mesh.position = position;
+    static_mesh.geom = geom_id;
 
-    static_mesh.geom = CreatePhysicsBoxStatic(position, size, catBits[STATIC], catBits[ALL]);
+    int i = arrlen(scene->static_list);
     arrput(scene->static_list, static_mesh);
+    if (arrlen(scene->static_list) > i) {
+        return i;
+    }
+    return -1;
 }
 
 void SceneAddCubeDynamic(Scene* scene, Vector3 position, Vector3 rotation, Vector3 size, Shader shadr, Texture texture) {
@@ -72,13 +77,29 @@ void CreateModels() {
     // Ground
     demo_scene.model_list = NULL;
 
-    const int shader_ID = 0;
     // Static
-    SceneAddPlaneStatic(&demo_scene, (Vector2) { 100.f, 100.f }, (Vector3) { 0.f, 0.f, 0.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { 16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, 16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
-    SceneAddCubeStatic(&demo_scene, (Vector3) { 16.f, 32.f, 16.f }, (Vector3) { -16.f, 16.f, -16.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    const int shader_ID = 0;
+    int  plane_model = CreateModelPlane(&demo_scene, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    dGeomID plane_geom = CreatePhysicsPlaneStatic(Vector3Zero(), (Vector3) { 0, 1, 0 }, catBits[STATIC], catBits[ALL]);
+    SceneAddPlaneStatic(&demo_scene, (Vector3) { 0.f, 0.f, 0.f }, plane_model, plane_geom);
+
+    const Vector3 tower_size = (Vector3){ 16.f, 32.f, 16.f };
+    int tower_model = CreateModelBox(&demo_scene, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    Vector3 tower_position = (Vector3){ 16.f, 16.f, 16.f };
+    dGeomID tower_geom = CreatePhysicsBoxStatic(tower_position, tower_size, catBits[STATIC], catBits[ALL]);
+    SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
+
+    tower_position = (Vector3){ 16.f, 16.f, -16.f };
+    tower_geom = CreatePhysicsBoxStatic(tower_position, tower_size, catBits[STATIC], catBits[ALL]);
+    SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
+
+    tower_position = (Vector3){ -16.f, 16.f, 16.f };
+    tower_geom = CreatePhysicsBoxStatic(tower_position, tower_size, catBits[STATIC], catBits[ALL]);
+    SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
+
+    tower_position = (Vector3){ -16.f, 16.f, -16.f };
+    tower_geom = CreatePhysicsBoxStatic(tower_position, tower_size, catBits[STATIC], catBits[ALL]);
+    SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     // Dynamic
     SceneAddCubeDynamic(&demo_scene, (Vector3) { 0.f, 1.f, -0.f }, (Vector3) { 0, 0, 0 }, (Vector3) { 1.f, 1.f, 1.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
@@ -128,7 +149,8 @@ void DrawScene() {
 
     // Draw level
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
-        DrawModel(demo_scene.static_list[i].model, demo_scene.static_list[i].position, 1.0f, WHITE);
+        
+        DrawModel(demo_scene.model_list[demo_scene.static_list[i].model], demo_scene.static_list[i].position, 1.0f, WHITE);
     }
     for (int i = 0; i < arrlen(demo_scene.dynamic_list); i++) {
         DynamicMesh dynamic_mesh = demo_scene.dynamic_list[i];
