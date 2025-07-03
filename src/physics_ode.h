@@ -4,10 +4,10 @@
 #include <ode/ode.h>
 #include "raylib.h"
 
-typedef struct PlaneBody {
-    dGeomID geom;
+typedef struct {
+    dTriMeshDataID trimesh;
     int* indexes;
-} MeshGeom;
+} TrimeshData;
 
 typedef struct {
     dBodyID body;
@@ -38,8 +38,6 @@ void DestroyPhysics();
 void UpdatePhysics(float delta_time);
 
 
-MeshGeom createStaticMesh(dSpaceID space, Model plane);
-
 /* COLLIDER API */
 dGeomID CreatePhysicsPlaneStatic(Vector3 position, Vector3 normal, unsigned layer, unsigned mask);
 
@@ -52,6 +50,10 @@ dBodyID CreatePhysicsBodySphereDynamic(Vector3 position, Vector3 rotation, float
 bool IsPhysicsPairColliding(dGeomID a, dGeomID b);
 
 void SetPhysicsTransform(const float pos[3], const float R[12], Matrix* matrix);
+
+TrimeshData CreatePhysicsTrimeshData(Model plane);
+
+dGeomID CreatePhysicsMesh(TrimeshData* trimesh_data, unsigned layer, unsigned mask);
 
 // TEMP API
 Body CreatePhysicsPlayerBody(Vector3 position);

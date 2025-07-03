@@ -10,7 +10,7 @@ dSpaceID space;
 dWorldID world;
 dJointGroupID contactgroup;
 
-MeshGeom planeGeom;
+TrimeshData planeGeom;
 Body playerBody;
 dContactGeom contact;
 
@@ -72,24 +72,33 @@ dBodyID createBullet(dWorldID world) {
 }
 
 
-// TODO: refactor
-MeshGeom createStaticMesh(Model plane) {
-    int nV = plane.meshes[0].vertexCount;
-    int* indices = RL_MALLOC(nV * sizeof(int));
-    if (indices == NULL) { return (MeshGeom) {0}; }
-    for (int i = 0; i < nV; i++) {
-        indices[i] = i;
-    }
-    dTriMeshDataID triData = dGeomTriMeshDataCreate();
-    dGeomTriMeshDataBuildSingle(triData, plane.meshes[0].vertices,
-        3 * sizeof(float), nV,
-        indices, nV,
-        3 * sizeof(int));
-    dGeomID planeGeom = dCreateTriMesh(space, triData, NULL, NULL, NULL);
-    dGeomSetCategoryBits(planeGeom, PHYS_SOLID);
-    dGeomSetCollideBits(planeGeom, PHYS_ALL);
 
-    return (MeshGeom) { .geom = planeGeom, .indexes = indices};
+TrimeshData CreatePhysicsTrimeshData(Model plane) {
+    int vertex_count = plane.meshes[0].vertexCount;
+    int* indexes = RL_MALLOC(vertex_count * sizeof(int));
+    if (indexes == NULL) { return (TrimeshData) {0}; }
+    for (int i = 0; i < vertex_count; i++) {
+        indexes[i] = i;
+    }
+    dTriMeshDataID trimesh_data = dGeomTriMeshDataCreate();
+    dGeomTriMeshDataBuildSingle(trimesh_data, plane.meshes[0].vertices,
+        3 * sizeof(float), vertex_count,
+        indexes, vertex_count,
+        3 * sizeof(int));
+    /*
+    dGeomID geom_id = dCreateTriMesh(space, trimesh_data, NULL, NULL, NULL);
+    dGeomSetCategoryBits(geom_id, PHYS_SOLID);
+    dGeomSetCollideBits(geom_id, PHYS_ALL);
+    */
+
+    return (TrimeshData) { trimesh_data, indexes};
+}
+
+dGeomID CreatePhysicsMesh(TrimeshData* trimesh_data, unsigned layer, unsigned mask) {
+    dGeomID geom_id = dCreateTriMesh(space, trimesh_data->trimesh, NULL, NULL, NULL);
+    dGeomSetCategoryBits(geom_id, layer);
+    dGeomSetCollideBits(geom_id, mask);
+    return geom_id;
 }
 
 // set a raylib model matrix from an ODE rotation matrix and position
