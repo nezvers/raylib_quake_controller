@@ -15,14 +15,6 @@ Body playerBody;
 dContactGeom contact;
 
 
-const int catBits[LAST_INDEX_CNT] = {
-    0x0001, ///< Plane category >          0001
-    0x0002, ///< Player category >         0010
-    0x0004, ///< Objects category >        0100
-    0x0008, ///< Player bullets category > 1000
-    ~0L     ///< All categories >          11111111111111111111111111111111
-};
-
 Body CreatePhysicsPlayerBody(Vector3 position) {
     dMass m;
     dMatrix3 R;
