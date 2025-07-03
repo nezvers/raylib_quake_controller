@@ -7,7 +7,7 @@
 typedef struct PlaneBody {
     dGeomID geom;
     int* indexes;
-} PlaneGeom;
+} MeshGeom;
 
 typedef struct {
     dBodyID body;
@@ -38,7 +38,7 @@ void DestroyPhysics();
 void UpdatePhysics(float delta_time);
 
 
-PlaneGeom createStaticMesh(dSpaceID space, Model plane);
+MeshGeom createStaticMesh(dSpaceID space, Model plane);
 
 /* COLLIDER API */
 dGeomID CreatePhysicsPlaneStatic(Vector3 position, Vector3 normal, unsigned layer, unsigned mask);

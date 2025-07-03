@@ -10,7 +10,7 @@ dSpaceID space;
 dWorldID world;
 dJointGroupID contactgroup;
 
-PlaneGeom planeGeom;
+MeshGeom planeGeom;
 Body playerBody;
 dContactGeom contact;
 
@@ -42,8 +42,8 @@ Body CreatePhysicsPlayerBody(Vector3 position) {
     dBodySetMaxAngularSpeed(obj, 0);
 
     // collision mask
-    dGeomSetCategoryBits(geom, catBits[PLAYER]);
-    dGeomSetCollideBits(geom, catBits[ALL] & (~catBits[PLAYER_BULLET]));
+    dGeomSetCategoryBits(geom, PHYS_PLAYER);
+    dGeomSetCollideBits(geom, PHYS_ALL & (~PHYS_BULLET));
     dBodySetGravityMode(obj, 8); // TODO: use this to remove gravity only to player
     int mode = dBodyGetGravityMode(obj);
 
@@ -52,7 +52,7 @@ Body CreatePhysicsPlayerBody(Vector3 position) {
 }
 
 // TODO: remove
-dBodyID createBullet(dSpaceID space, dWorldID world) {
+dBodyID createBullet(dWorldID world) {
     dBodyID obj = dBodyCreate(world);
     dGeomID geom;
     dMass m;
@@ -62,8 +62,8 @@ dBodyID createBullet(dSpaceID space, dWorldID world) {
     dGeomSetBody(geom, obj);
 
     // collision mask
-    dGeomSetCategoryBits(geom, catBits[PLAYER_BULLET]);
-    dGeomSetCollideBits(geom, catBits[ALL] & (~catBits[PLAYER]) & (~catBits[PLAYER_BULLET]));
+    dGeomSetCategoryBits(geom, PHYS_BULLET);
+    dGeomSetCollideBits(geom, PHYS_ALL & ~PHYS_PLAYER & ~PHYS_BULLET);
 
     dBodySetMass(obj, &m);
     dBodyDisable(obj);
@@ -71,24 +71,25 @@ dBodyID createBullet(dSpaceID space, dWorldID world) {
     return obj;
 }
 
+
 // TODO: refactor
-PlaneGeom createStaticMesh(dSpaceID space, Model plane) {
+MeshGeom createStaticMesh(Model plane) {
     int nV = plane.meshes[0].vertexCount;
-    int* groundInd = RL_MALLOC(nV * sizeof(int));
-    if (groundInd == NULL) { return (PlaneGeom) {0}; }
+    int* indices = RL_MALLOC(nV * sizeof(int));
+    if (indices == NULL) { return (MeshGeom) {0}; }
     for (int i = 0; i < nV; i++) {
-        groundInd[i] = i;
+        indices[i] = i;
     }
     dTriMeshDataID triData = dGeomTriMeshDataCreate();
     dGeomTriMeshDataBuildSingle(triData, plane.meshes[0].vertices,
         3 * sizeof(float), nV,
-        groundInd, nV,
+        indices, nV,
         3 * sizeof(int));
     dGeomID planeGeom = dCreateTriMesh(space, triData, NULL, NULL, NULL);
-    dGeomSetCategoryBits(planeGeom, catBits[STATIC]);
-    dGeomSetCollideBits(planeGeom, catBits[ALL]);
+    dGeomSetCategoryBits(planeGeom, PHYS_SOLID);
+    dGeomSetCollideBits(planeGeom, PHYS_ALL);
 
-    return (PlaneGeom) { .geom = planeGeom, .indexes = groundInd };
+    return (MeshGeom) { .geom = planeGeom, .indexes = indices};
 }
 
 // set a raylib model matrix from an ODE rotation matrix and position
