@@ -39,24 +39,30 @@ int SceneAddCubeStatic(Scene* scene, Vector3 position, int model_id, dGeomID geo
     return -1;
 }
 
-void SceneAddCubeDynamic(Scene* scene, Vector3 position, Vector3 rotation, Vector3 size, Shader shadr, Texture texture) {
+int SceneAddBoxDynamic(Scene* scene, int model_id, dBodyID geom_id) {
     DynamicMesh dynamic_mesh = { 0 };
-    dynamic_mesh.model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
-    dynamic_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    dynamic_mesh.model.materials[0].shader = shadr;
+    dynamic_mesh.model = model_id;
+    dynamic_mesh.body = geom_id;
 
-    dynamic_mesh.body = CreatePhysicsBodyBoxDynamic(position, rotation, size, catBits[OBJS], catBits[ALL]);
+    int i = arrlen(scene->dynamic_list);
     arrput(scene->dynamic_list, dynamic_mesh);
+    if (arrlen(scene->dynamic_list) > i) {
+        return i;
+    }
+    return -1;
 }
 
-void SceneAddCubeSphere(Scene* scene, Vector3 position, Vector3 rotation, float radius, Shader shadr, Texture texture) {
+int SceneAddSphereDynamic(Scene* scene, int model_id, dBodyID geom_id) {
     DynamicMesh dynamic_mesh = { 0 };
-    dynamic_mesh.model = LoadModelFromMesh(GenMeshSphere(radius, 10, 10));
-    dynamic_mesh.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    dynamic_mesh.model.materials[0].shader = shadr;
+    dynamic_mesh.model = model_id;
+    dynamic_mesh.body = geom_id;
 
-    dynamic_mesh.body = CreatePhysicsBodySphereDynamic(position, rotation, radius, catBits[OBJS], catBits[ALL]);
+    int i = arrlen(scene->dynamic_list);
     arrput(scene->dynamic_list, dynamic_mesh);
+    if (arrlen(scene->dynamic_list) > i) {
+        return i;
+    }
+    return -1;
 }
 
 
@@ -102,8 +108,19 @@ void CreateModels() {
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     // Dynamic
-    SceneAddCubeDynamic(&demo_scene, (Vector3) { 0.f, 1.f, -0.f }, (Vector3) { 0, 0, 0 }, (Vector3) { 1.f, 1.f, 1.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
-    SceneAddCubeSphere(&demo_scene, (Vector3) { 0.f, 2.f, -0.f }, (Vector3) { 0, 0, 0 }, 0.5f, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    const Vector3 box_size = (Vector3){ 1.f, 1.f, 1.f };
+    const Vector3 box_rotation = (Vector3){ 0, 0, 0 };
+    Vector3 box_position = (Vector3){ 0.f, 1.f, -0.f };
+    int box_model = CreateModelBox(&demo_scene, box_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    dBodyID box_body = CreatePhysicsBodyBoxDynamic(box_position, box_rotation, box_size, catBits[OBJS], catBits[ALL]);
+    SceneAddBoxDynamic(&demo_scene, box_model, box_body);
+
+    const float sphere_radius = 0.5f;
+    const Vector3 sphere_rotation = (Vector3){ 0, 0, 0 };
+    Vector3 sphere_position = (Vector3){ 0.f, 2.f, -0.f };
+    int sphere_model = CreateModelSphere(&demo_scene, sphere_radius, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    dBodyID sphere_body = CreatePhysicsBodySphereDynamic(sphere_position, sphere_rotation, sphere_radius, catBits[OBJS], catBits[ALL]);
+    SceneAddSphereDynamic(&demo_scene, sphere_model, sphere_body);
 }
 
 void CreateScene() {
@@ -157,8 +174,8 @@ void DrawScene() {
         SetPhysicsTransform(
             (float*)dBodyGetPosition(dynamic_mesh.body),
             (float*)dBodyGetRotation(dynamic_mesh.body),
-            &dynamic_mesh.model.transform);
-        DrawModel(dynamic_mesh.model, Vector3Zero(), 1.0f, WHITE);
+            &demo_scene.model_list[dynamic_mesh.model].transform);
+        DrawModel(demo_scene.model_list[dynamic_mesh.model], Vector3Zero(), 1.0f, WHITE);
     }
 
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);

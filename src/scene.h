@@ -29,7 +29,7 @@ typedef struct {
 
 typedef struct {
     dBodyID body;
-    Model model;
+    int model;
 } DynamicMesh;
 
 typedef struct {
