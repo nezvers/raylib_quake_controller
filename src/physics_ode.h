@@ -6,7 +6,7 @@
 
 typedef struct {
     dTriMeshDataID trimesh;
-    int* indexes;
+    int* indexes; // need to be freed
 } TrimeshData;
 
 typedef struct {
