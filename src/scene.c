@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "input.h"
 #include "models.h"
+#include "debug_draw.h"
 
 
 Scene demo_scene;
@@ -157,6 +158,8 @@ void UpdateScene(float delta) {
     UpdateFPSCameraAnimated(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, player_input, demo_scene.player.is_grounded);
 
     UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera);
+
+    UpdateDebugDraw(delta);
 }
 
 void DrawScene() {
@@ -179,6 +182,8 @@ void DrawScene() {
     }
 
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
+
+    DrawDebugDraw();
 
     EndMode3D();
 }
