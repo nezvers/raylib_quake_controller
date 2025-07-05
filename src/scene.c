@@ -127,10 +127,11 @@ void CreateModels() {
 void CreateScene() {
     CreatePhysics();
     CreateModels();
-    demo_scene.player = CreateBody((Vector3) {0,1,3}, Vector2Zero());
+    demo_scene.player = CreateCharacter((Vector3) {0,1,3}, Vector2Zero());
     demo_scene.camera = CreateCamera(demo_scene.player.position, &demo_scene.player.rotation);
 }
 
+// TODO: GTFO
 void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
 
@@ -144,11 +145,12 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
 }
 
 void UpdateScene(float delta) {
+    UpdateDebugDraw(delta);
     PlayerInput player_input = UpdateInput();
     demo_scene.player.rotation.x -= player_input.mouse.x;
     demo_scene.player.rotation.y += player_input.mouse.y;
 
-    UpdateBody(&demo_scene.player, demo_scene.player.rotation.x, player_input);
+    UpdateCharacterPlayer(&demo_scene.player, demo_scene.player.rotation.x, player_input);
 
     UpdatePhysics(delta);
 
@@ -159,7 +161,6 @@ void UpdateScene(float delta) {
 
     UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera);
 
-    UpdateDebugDraw(delta);
 }
 
 void DrawScene() {

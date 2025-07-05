@@ -1,11 +1,11 @@
 #include "character.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "rcamera.h"
 #include "scene.h"
+#include "debug_draw.h"
 
 
-void UpdateBody(Character* body, float rot, PlayerInput input) {
+void UpdateCharacter(Character* body, float rot, PlayerInput input) {
     Vector2 input_dir = (Vector2){ (float)input.x, (float)-input.y };
 #if defined(NORMALIZE_INPUT)
     // Slow down diagonal movement
@@ -28,8 +28,6 @@ void UpdateBody(Character* body, float rot, PlayerInput input) {
     if (body->is_grounded && input.jump) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false;
-        //SetSoundPitch(sound_list[JUMP_HUH], 1.f + (GetRandomValue(-100, 100) * 0.001));
-        //SetSoundVolume(sound_list[JUMP_HUH], 0.2f);
         PlayAppSound(JUMP_HUH);
     }
 
@@ -82,7 +80,15 @@ void UpdateBody(Character* body, float rot, PlayerInput input) {
     */
 }
 
-Character CreateBody(Vector3 position, Vector2 rotation) {
+void UpdateCharacterPlayer(Character* body, float rot, PlayerInput input) {
+    if (input.shoot) {
+        Vector3 position = demo_scene.camera.position;
+        AppendDebugDrawSphere(position, 0.2f, SKYBLUE, 5.f);
+    }
+    UpdateCharacter(body, rot, input);
+}
+
+Character CreateCharacter(Vector3 position, Vector2 rotation) {
     Character character = (Character){ position, Vector3Zero(), Vector3Zero(), rotation, false, sound_list[JUMP_HUH], CreatePhysicsPlayerBody(position) };
     return character;
 }

@@ -9,6 +9,7 @@ typedef struct {
     char y;
     bool jump;
     bool crouch;
+    bool shoot;
     Vector2 mouse;
 }PlayerInput;
 
