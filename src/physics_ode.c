@@ -23,6 +23,9 @@ void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
         if (Contacts[i].geom.depth < instance->ray_cast.distance) {
             instance->ray_cast.position = *(Vector3*)(Contacts[i].geom.pos);
             instance->ray_cast.distance = Contacts[i].geom.depth;
+            instance->ray_cast.other_geom = Contacts[i].geom.g2;
+            instance->ray_cast.other_body = dGeomGetBody(Contacts[i].geom.g2);
+            
             // TODO: Get collision geom / body
             // TODO: Get collision layer
         }

@@ -92,7 +92,15 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
         const float distance = 20.f;
         Vector3 end = Vector3Add(start, Vector3Scale(body->look_dir, distance));
         if (RaycastPhysics(instance, start, end, PHYS_BULLET, PHYS_ALL & ~PHYS_PLAYER)) {
-            AppendDebugDrawLine3D(start, instance->ray_cast.position, SKYBLUE, 5.f);
+            dGeomID other = instance->ray_cast.other_body;
+            if (other != NULL) {
+                Vector3 push_force = Vector3Scale(body->look_dir, 1000.f);
+                Vector3 point = instance->ray_cast.position;
+                //dBodyAddRelForce(other, push_force.x, push_force.y, push_force.z);
+                dBodyAddForceAtPos(other, push_force.x, push_force.y, push_force.z, point.x, point.y, point.z);
+                AppendDebugDrawLine3D(start, instance->ray_cast.position, SKYBLUE, 5.f);
+                AppendDebugDrawSphere(point, 0.05f, SKYBLUE, 2.f);
+            }
         }
         //AppendDebugDrawSphere(start, 0.2f, SKYBLUE, 5.f);
     }

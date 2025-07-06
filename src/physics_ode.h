@@ -18,6 +18,8 @@ typedef struct {
 typedef struct {
     Vector3 position; // x, y, z
     float distance;
+    dGeomID other_geom;
+    dBodyID other_body;
     dGeomID ray; // Used for raycast query
 }RayCast;
 
