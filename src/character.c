@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "scene.h"
 #include "debug_draw.h"
+#include "physics_ode.h"
 
 
 #define CROUCH_HEIGHT 0.f
@@ -87,8 +88,14 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
     UpdateFPSCameraAnimated(&demo_scene.camera, player_head_pos, &body->rotation, delta, input, body->is_grounded, &body->look_dir);
 
     if (input->shoot) {
-        Vector3 position = demo_scene.camera.camera.position;
-        AppendDebugDrawSphere(position, 0.2f, SKYBLUE, 5.f);
+        Vector3 start = demo_scene.camera.camera.position;
+        const float distance = 20.f;
+        Vector3 end = Vector3Add(start, Vector3Scale(body->look_dir, distance));
+        if (RaycastPhysics(instance, start, end)) {
+            AppendDebugDrawLine3D(start, instance->ray_cast.position, SKYBLUE, 5.f);
+
+        }
+        //AppendDebugDrawSphere(start, 0.2f, SKYBLUE, 5.f);
     }
 }
 

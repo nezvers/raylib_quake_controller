@@ -69,6 +69,8 @@ TrimeshData CreatePhysicsTrimeshData(Model plane);
 
 dGeomID CreatePhysicsMesh(PhysicsInstance* instance, TrimeshData* trimesh_data, unsigned layer, unsigned mask);
 
+bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end);
+
 // TEMP API
 PhysicsCharacter CreatePhysicsPlayerBody(PhysicsInstance* instance, Vector3 position);
 
