@@ -5,7 +5,7 @@
 #include "debug_draw.h"
 
 
-void UpdateCharacter(Character* body, float rot, PlayerInput input) {
+void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input) {
     Vector2 input_dir = (Vector2){ (float)input.x, (float)-input.y };
 #if defined(NORMALIZE_INPUT)
     // Slow down diagonal movement
@@ -15,12 +15,12 @@ void UpdateCharacter(Character* body, float rot, PlayerInput input) {
 #endif
 
     /* Fancy collision system against "THE FLOOR" */
-    body->is_grounded = IsPlayerGrounded(); // <= enables jumping
+    body->is_grounded = IsPlayerGrounded(instance, body); // <= enables jumping
     
 
     float delta = GetFrameTime();
 
-    float* phys_velocity = dBodyGetLinearVel(playerBody.body);
+    float* phys_velocity = dBodyGetLinearVel(glob_playerBody.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
 
     body->velocity.y -= GRAVITY * delta - 9.8 * delta; // 9.8 is a hack to counter physics gravity on top of character controller gravity.
@@ -71,7 +71,7 @@ void UpdateCharacter(Character* body, float rot, PlayerInput input) {
     body->velocity.x = hvel.x;
     body->velocity.z = hvel.z;
 
-    dBodySetLinearVel(playerBody.body, body->velocity.x, body->velocity.y, body->velocity.z);
+    dBodySetLinearVel(glob_playerBody.body, body->velocity.x, body->velocity.y, body->velocity.z);
 
     /*
     body->position.x += body->velocity.x * delta;
@@ -80,15 +80,15 @@ void UpdateCharacter(Character* body, float rot, PlayerInput input) {
     */
 }
 
-void UpdateCharacterPlayer(Character* body, float rot, PlayerInput input) {
+void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input) {
     if (input.shoot) {
         Vector3 position = demo_scene.camera.position;
         AppendDebugDrawSphere(position, 0.2f, SKYBLUE, 5.f);
     }
-    UpdateCharacter(body, rot, input);
+    UpdateCharacter(instance, body, rot, input);
 }
 
-Character CreateCharacter(Vector3 position, Vector2 rotation) {
-    Character character = (Character){ position, Vector3Zero(), Vector3Zero(), rotation, false, sound_list[JUMP_HUH], CreatePhysicsPlayerBody(position) };
+Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter phys) {
+    Character character = (Character){ position, Vector3Zero(), Vector3Zero(), rotation, false, sound_list[JUMP_HUH], phys };
     return character;
 }

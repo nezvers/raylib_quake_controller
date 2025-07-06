@@ -29,12 +29,12 @@ typedef struct {
     Vector2 rotation;
     bool is_grounded;
     Sound sound_jump;
-    Body phys;
+    PhysicsCharacter phys;
 }Character;
 
 
 /* Generate initialized struct */
-Character CreateCharacter(Vector3 position, Vector2 rotation);
+Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter phys);
 
 /*
 Quake-like movement
@@ -43,8 +43,8 @@ rot: horizontal rotation
 side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
-void UpdateCharacter(Character* body, float rot, PlayerInput input);
+void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input);
 
-void UpdateCharacterPlayer(Character* body, float rot, PlayerInput input);
+void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input);
 
 #endif // CHARACTER_H
