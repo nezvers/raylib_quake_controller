@@ -26,6 +26,8 @@ typedef struct {
     dSpaceID space;
     dWorldID world; // TODO: use array
     dJointGroupID contact_group;
+    dContactGeom contact_geom;
+    PhysicsCharacter player;
     RayCast ray_cast; // Used for raycast query
 } PhysicsInstance;
 
@@ -36,9 +38,6 @@ enum PHYSICS_LAYERS {
     PHYS_BULLET     = 0x0008, ///< Player bullets category > 1000
     PHYS_ALL        = ~0L     ///< All categories >          11111111111111111111111111111111
 };
-
-//extern dSpaceID glob_space;
-extern PhysicsCharacter glob_playerBody;
 
 
 // when objects potentially collide this callback is called

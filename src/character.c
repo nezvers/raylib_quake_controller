@@ -20,7 +20,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
 
     float delta = GetFrameTime();
 
-    float* phys_velocity = dBodyGetLinearVel(glob_playerBody.body);
+    float* phys_velocity = dBodyGetLinearVel(body->phys.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
 
     body->velocity.y -= GRAVITY * delta - 9.8 * delta; // 9.8 is a hack to counter physics gravity on top of character controller gravity.
@@ -71,7 +71,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     body->velocity.x = hvel.x;
     body->velocity.z = hvel.z;
 
-    dBodySetLinearVel(glob_playerBody.body, body->velocity.x, body->velocity.y, body->velocity.z);
+    dBodySetLinearVel(body->phys.body, body->velocity.x, body->velocity.y, body->velocity.z);
 
     /*
     body->position.x += body->velocity.x * delta;

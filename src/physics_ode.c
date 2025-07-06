@@ -5,22 +5,10 @@
 #include <ode/collision.h>
 #include <ode/objects.h>
 
-// TODO: Put these globals into a struct (Instanced physics)
 
 // a space can have multiple "worlds" for example you might have different
 // sub levels that never interact, or the inside and outside of a building
-//dSpaceID glob_space;
-// these are used by the collision callback, while they could be passed
-// via the collision callbacks user data, making the global is easier
-dWorldID glob_world;
-dJointGroupID glob_contactgroup;
 
-TrimeshData planeGeom;
-PhysicsCharacter glob_playerBody;
-dContactGeom glob_contact;
-
-
-PhysicsInstance physics_instance = {0}; // TODO: Scene gets an instance when CreatePhysics
 
 // Check ray collision against a space
 void RayCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
@@ -103,9 +91,11 @@ PhysicsCharacter CreatePhysicsPlayerBody(PhysicsInstance* instance, Vector3 posi
     dGeomSetCollideBits(geom, PHYS_ALL & (~PHYS_BULLET));
     dBodySetGravityMode(obj, 8); // TODO: use this to remove gravity only to player
     int mode = dBodyGetGravityMode(obj);
-
-    glob_playerBody = (PhysicsCharacter){ .body = obj, .geom = geom, .footGeom = footGeom };
-    return glob_playerBody;
+    
+    PhysicsCharacter player_body = (PhysicsCharacter){ .body = obj, .geom = geom, .footGeom = footGeom };
+    instance->player = player_body;
+    //glob_playerBody = player_body;
+    return player_body;
 }
 
 // TODO: remove
@@ -232,7 +222,6 @@ void InitPhysics() {
 
 PhysicsInstance CreatePhysics() {
     InitPhysics();
-
     
     PhysicsInstance instance = { 0 };
     instance.world = dWorldCreate();
@@ -240,13 +229,6 @@ PhysicsInstance CreatePhysics() {
     instance.contact_group = dJointGroupCreate(0);
     dWorldSetGravity(instance.world, 0, -9.8, 0);
 
-    glob_world = dWorldCreate();
-    //glob_space = dHashSpaceCreate(NULL);
-    glob_contactgroup = dJointGroupCreate(0);
-    dWorldSetGravity(glob_world, 0, -9.8, 0);
-
-    // TODO: fully move to instance reference passing
-    physics_instance = instance;
     return instance;
 }
 
@@ -256,10 +238,6 @@ void ClosePhysics() {
 
 void DestroyPhysics(PhysicsInstance* instance) {
     //TODO: free(planeGeom.indexes);
-    dJointGroupEmpty(glob_contactgroup);
-    dJointGroupDestroy(glob_contactgroup);
-    //dSpaceDestroy(glob_space);
-    dWorldDestroy(glob_world);
 
     if (instance == NULL) {
         return;
@@ -280,23 +258,23 @@ static void nearCallback(void* data, dGeomID o1, dGeomID o2){
     dBodyID b2 = dGeomGetBody(o2);
     if (b1 && b2 && dAreConnectedExcluding(b1, b2, dJointTypeContact))
         return;
-    bool is_player = b1 == glob_playerBody.body || b2 == glob_playerBody.body;
-    dContact glob_contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
+    bool is_player = b1 == instance->player.body || b2 == instance->player.body;
+    dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
     for (i = 0; i < MAX_CONTACTS; i++) {
-        /*glob_contact[i].surface.mode = dContactBounce | dContactSoftCFM | dContactApprox1;*/
-        glob_contact[i].surface.mode = is_player ? (dContactSlip1 | dContactSlip2) : dContactBounce;
-        glob_contact[i].surface.mu = dInfinity;
-        glob_contact[i].surface.bounce = 0.0;
-        glob_contact[i].surface.bounce_vel = 0.1;
-        /*glob_contact[i].surface.soft_cfm = 0.01;*/
+        /*contact[i].surface.mode = dContactBounce | dContactSoftCFM | dContactApprox1;*/
+        contact[i].surface.mode = is_player ? (dContactSlip1 | dContactSlip2) : dContactBounce;
+        contact[i].surface.mu = dInfinity;
+        contact[i].surface.bounce = 0.0;
+        contact[i].surface.bounce_vel = 0.1;
+        /*contact[i].surface.soft_cfm = 0.01;*/
     }
-    int numc = dCollide(o1, o2, MAX_CONTACTS, &glob_contact[0].geom,
+    int numc = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom,
         sizeof(dContact));
     if (numc) {
         dMatrix3 RI;
         dRSetIdentity(RI);
         for (i = 0; i < numc; i++) {
-            dJointID c = dJointCreateContact(instance->world, glob_contactgroup, glob_contact + i);
+            dJointID c = dJointCreateContact(instance->world, instance->contact_group, contact + i);
             dJointAttach(c, b1, b2);
         }
     }
@@ -310,7 +288,7 @@ void UpdatePhysics(PhysicsInstance* instance, float delta_time) {
     if (delta_time > 0.f) {
         dWorldQuickStep(instance->world, delta_time);
     }
-    dJointGroupEmpty(glob_contactgroup);
+    dJointGroupEmpty(instance->contact_group);
 }
 
 /*
@@ -381,5 +359,5 @@ dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 positi
 }
 
 bool IsPhysicsPairColliding(PhysicsInstance* instance, dGeomID a, dGeomID b) {
-    return dCollide(a, b, 1, &glob_contact, sizeof(dContactGeom));
+    return dCollide(a, b, 1, &instance->contact_geom, sizeof(dContactGeom));
 }
