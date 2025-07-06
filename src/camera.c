@@ -2,14 +2,10 @@
 #include "raymath.h"
 
 
-#define CROUCH_HEIGHT 0.f
-#define STAND_HEIGHT 1.f
-#define BOTTOM_HEIGHT 0.5f
 
 typedef struct {
     float bob_timer;
     float walk_lerp;
-    float headLerp;
     Vector2 lean;
 } CameraAnimFPS;
 
@@ -22,7 +18,6 @@ Camera CreateCamera(Vector3 position, Vector2* rotation) {
 
     camera_anim.bob_timer = 0.f;
     camera_anim.walk_lerp = 0.f;
-    camera_anim.headLerp = STAND_HEIGHT;
     camera_anim.lean = Vector2Zero();
     UpdateFPSCameraAnimated(&camera, position, rotation, 0.f, (PlayerInput) {0}, false);
 
@@ -32,12 +27,7 @@ Camera CreateCamera(Vector3 position, Vector2* rotation) {
 // TODO: receive input struct or something
 void UpdateFPSCameraAnimated(Camera* camera, Vector3 position, Vector2* rotation, float delta, PlayerInput input, bool grounded) {
 
-    camera_anim.headLerp = Lerp(camera_anim.headLerp, (input.crouch ? CROUCH_HEIGHT : STAND_HEIGHT), 20.f * delta);
-    camera->position = (Vector3){
-            position.x,
-            position.y + (BOTTOM_HEIGHT + camera_anim.headLerp),
-            position.z,
-    };
+    camera->position = position;
 
     const Vector3 up = (Vector3){ 0.f, 1.f, 0.f };
     const Vector3 target_offset = (Vector3){ 0.f, 0.f, -1.f };

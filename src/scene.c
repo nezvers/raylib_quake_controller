@@ -125,11 +125,13 @@ void CreateModels() {
 }
 
 void CreateScene() {
+    // TODO: Load from scene prefab/ save file
     demo_scene.physics = CreatePhysics();
     CreateModels();
     Vector3 player_position = (Vector3){ 0,1,3 };
     demo_scene.player = CreateCharacter(player_position, Vector2Zero(), CreatePhysicsPlayerBody(&demo_scene.physics, player_position));
-    demo_scene.camera = CreateCamera(demo_scene.player.position, &demo_scene.player.rotation);
+    player_position.y += demo_scene.player.head_lerp;
+    demo_scene.camera = CreateCamera(player_position, &demo_scene.player.rotation);
 }
 
 // TODO: GTFO
@@ -151,14 +153,16 @@ void UpdateScene(float delta) {
     demo_scene.player.rotation.x -= player_input.mouse.x;
     demo_scene.player.rotation.y += player_input.mouse.y;
 
-    UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, demo_scene.player.rotation.x, player_input);
+    UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, demo_scene.player.rotation.x, player_input, delta);
 
     UpdatePhysics(&demo_scene.physics, delta);
 
     float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
     demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
     
-    UpdateFPSCameraAnimated(&demo_scene.camera, demo_scene.player.position, &demo_scene.player.rotation, delta, player_input, demo_scene.player.is_grounded);
+    Vector3 player_head_pos = demo_scene.player.position;
+    player_head_pos.y += demo_scene.player.head_lerp;
+    UpdateFPSCameraAnimated(&demo_scene.camera, player_head_pos, &demo_scene.player.rotation, delta, player_input, demo_scene.player.is_grounded);
 
     UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera);
 

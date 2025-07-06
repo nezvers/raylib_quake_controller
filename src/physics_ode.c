@@ -11,7 +11,7 @@
 
 
 // Check ray collision against a space
-void RayCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
+void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
     PhysicsInstance* instance = (PhysicsInstance*)data;
 
     // Check collisions
@@ -28,7 +28,7 @@ void RayCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
 }
 
 // Performs raycasting on a space and returns the point of collision. Return false for no hit.
-bool RaycastQuery(PhysicsInstance* instance, const Vector3 start, Vector3 end) {
+bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end) {
 
     // Calculate direction
     dVector3 dir;
@@ -41,13 +41,13 @@ bool RaycastQuery(PhysicsInstance* instance, const Vector3 start, Vector3 end) {
     // Normalize
     dScaleVector3(dir, inverse_length);
 
-    // Create ray
+    // Create ray inside physics instance
     instance->ray_cast.ray = dCreateRay(0, length);
     dGeomRaySet(instance->ray_cast.ray, start.x, start.y, start.z, dir[0], dir[1], dir[2]);
 
     // Check collisions
     instance->ray_cast.distance = dInfinity;
-    dSpaceCollide2(instance->ray_cast.ray, (dGeomID)instance->space, instance, &RayCallback);
+    dSpaceCollide2(instance->ray_cast.ray, (dGeomID)instance->space, instance, &RaycastPhysicsCallback);
 
     // Cleanup
     dGeomDestroy(instance->ray_cast.ray);
@@ -94,7 +94,6 @@ PhysicsCharacter CreatePhysicsPlayerBody(PhysicsInstance* instance, Vector3 posi
     
     PhysicsCharacter player_body = (PhysicsCharacter){ .body = obj, .geom = geom, .footGeom = footGeom };
     instance->player = player_body;
-    //glob_playerBody = player_body;
     return player_body;
 }
 
@@ -248,7 +247,7 @@ void DestroyPhysics(PhysicsInstance* instance) {
     dWorldDestroy(instance->world);
 }
 
-static void nearCallback(void* data, dGeomID o1, dGeomID o2){
+static void PhysicsCollisionCallback(void* data, dGeomID o1, dGeomID o2){
     PhysicsInstance* instance = (PhysicsInstance*)data;
     int i;
     // if (o1->body && o2->body) return;
@@ -282,7 +281,7 @@ static void nearCallback(void* data, dGeomID o1, dGeomID o2){
 
 void UpdatePhysics(PhysicsInstance* instance, float delta_time) {
     // check for collisions
-    dSpaceCollide(instance->space, instance, &nearCallback);
+    dSpaceCollide(instance->space, instance, &PhysicsCollisionCallback);
 
     // step the world
     if (delta_time > 0.f) {

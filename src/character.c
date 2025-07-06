@@ -5,7 +5,15 @@
 #include "debug_draw.h"
 
 
-void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input) {
+#define CROUCH_HEIGHT 0.f
+#define STAND_HEIGHT 1.f
+#define BOTTOM_HEIGHT 0.5f
+
+
+void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta) {
+
+    body->head_lerp = Lerp(body->head_lerp, (input.crouch ? CROUCH_HEIGHT : STAND_HEIGHT), 20.f * delta);
+
     Vector2 input_dir = (Vector2){ (float)input.x, (float)-input.y };
 #if defined(NORMALIZE_INPUT)
     // Slow down diagonal movement
@@ -14,11 +22,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     }
 #endif
 
-    /* Fancy collision system against "THE FLOOR" */
     body->is_grounded = IsPlayerGrounded(instance, body); // <= enables jumping
-    
-
-    float delta = GetFrameTime();
 
     float* phys_velocity = dBodyGetLinearVel(body->phys.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
@@ -72,23 +76,18 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     body->velocity.z = hvel.z;
 
     dBodySetLinearVel(body->phys.body, body->velocity.x, body->velocity.y, body->velocity.z);
-
-    /*
-    body->position.x += body->velocity.x * delta;
-    body->position.y += body->velocity.y * delta;
-    body->position.z += body->velocity.z * delta;
-    */
 }
 
-void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input) {
+void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta) {
     if (input.shoot) {
         Vector3 position = demo_scene.camera.position;
         AppendDebugDrawSphere(position, 0.2f, SKYBLUE, 5.f);
     }
-    UpdateCharacter(instance, body, rot, input);
+    UpdateCharacter(instance, body, rot, input, delta);
 }
 
 Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter phys) {
-    Character character = (Character){ position, Vector3Zero(), Vector3Zero(), rotation, false, sound_list[JUMP_HUH], phys };
+    float head_offset = BOTTOM_HEIGHT + STAND_HEIGHT;
+    Character character = (Character){ position, Vector3Zero(), Vector3Zero(), rotation, false, head_offset, sound_list[JUMP_HUH], phys };
     return character;
 }

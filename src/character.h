@@ -28,6 +28,7 @@ typedef struct {
     Vector3 dir;
     Vector2 rotation;
     bool is_grounded;
+    float head_lerp;
     Sound sound_jump;
     PhysicsCharacter phys;
 }Character;
@@ -43,8 +44,8 @@ rot: horizontal rotation
 side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
-void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input);
+void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta);
 
-void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input);
+void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta);
 
 #endif // CHARACTER_H
