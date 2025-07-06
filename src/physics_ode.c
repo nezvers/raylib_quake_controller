@@ -30,7 +30,7 @@ void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
 }
 
 // Performs raycasting on a space and returns the point of collision. Return false for no hit.
-bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end) {
+bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end, unsigned layer, unsigned mask) {
 
     // Calculate direction
     dVector3 dir;
@@ -45,6 +45,9 @@ bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end)
 
     // Create ray inside physics instance
     instance->ray_cast.ray = dCreateRay(0, length);
+    dGeomSetCategoryBits(instance->ray_cast.ray, layer);
+    dGeomSetCollideBits(instance->ray_cast.ray, mask);
+
     dGeomRaySet(instance->ray_cast.ray, start.x, start.y, start.z, dir[0], dir[1], dir[2]);
 
     // Check collisions

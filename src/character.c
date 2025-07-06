@@ -91,9 +91,8 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
         Vector3 start = demo_scene.camera.camera.position;
         const float distance = 20.f;
         Vector3 end = Vector3Add(start, Vector3Scale(body->look_dir, distance));
-        if (RaycastPhysics(instance, start, end)) {
+        if (RaycastPhysics(instance, start, end, PHYS_BULLET, PHYS_ALL & ~PHYS_PLAYER)) {
             AppendDebugDrawLine3D(start, instance->ray_cast.position, SKYBLUE, 5.f);
-
         }
         //AppendDebugDrawSphere(start, 0.2f, SKYBLUE, 5.f);
     }
