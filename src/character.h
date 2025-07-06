@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "sounds.h"
 #include "input.h"
+#include "camera.h"
 #include "physics_ode.h"
 
 
@@ -26,6 +27,7 @@ typedef struct {
     Vector3 position;
     Vector3 velocity;
     Vector3 dir;
+    Vector3 look_dir;
     Vector2 rotation;
     bool is_grounded;
     float head_lerp;
@@ -44,8 +46,8 @@ rot: horizontal rotation
 side: (-1 to 1) walk direction sideways
 forward: (-1 to 1) walk direction forward
 */
-void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta);
+void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput* input, float delta);
 
-void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, float rot, PlayerInput input, float delta);
+void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInput* input, CameraFPS* camera, float delta);
 
 #endif // CHARACTER_H

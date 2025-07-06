@@ -4,9 +4,16 @@
 #include "raylib.h"
 #include "input.h"
 
-Camera CreateCamera(Vector3 position, Vector2* rotation);
+typedef struct {
+    float bob_timer;
+    float walk_lerp;
+    Vector2 lean;
+    Camera camera;
+} CameraFPS;
+
+CameraFPS CreateCamera(Vector3 position, Vector2* rotation, Vector3* look_dir);
 
 /* Sets camera rotation and animation */
-void UpdateFPSCameraAnimated(Camera* camera, Vector3 position, Vector2* rotation, float delta, PlayerInput input, bool grounded);
+void UpdateFPSCameraAnimated(CameraFPS* camera, Vector3 position, Vector2* rotation, float delta, PlayerInput* input, bool grounded, Vector3* look_dir);
 
 #endif // CAMERA_H

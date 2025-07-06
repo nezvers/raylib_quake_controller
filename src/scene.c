@@ -4,7 +4,6 @@
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 #include "stb_ds.h"
-#include "camera.h"
 #include "input.h"
 #include "models.h"
 #include "debug_draw.h"
@@ -131,7 +130,7 @@ void CreateScene() {
     Vector3 player_position = (Vector3){ 0,1,3 };
     demo_scene.player = CreateCharacter(player_position, Vector2Zero(), CreatePhysicsPlayerBody(&demo_scene.physics, player_position));
     player_position.y += demo_scene.player.head_lerp;
-    demo_scene.camera = CreateCamera(player_position, &demo_scene.player.rotation);
+    demo_scene.camera = CreateCamera(player_position, &demo_scene.player.rotation, &demo_scene.player.look_dir);
 }
 
 // TODO: GTFO
@@ -153,25 +152,21 @@ void UpdateScene(float delta) {
     demo_scene.player.rotation.x -= player_input.mouse.x;
     demo_scene.player.rotation.y += player_input.mouse.y;
 
-    UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, demo_scene.player.rotation.x, player_input, delta);
+    UpdateCharacter(&demo_scene.physics, &demo_scene.player, demo_scene.player.rotation.x, &player_input, delta);
 
     UpdatePhysics(&demo_scene.physics, delta);
 
-    float* pos = (float*)dBodyGetPosition(demo_scene.player.phys.body);
-    demo_scene.player.position = (Vector3){ pos[0], pos[1], pos[2] };
-    
-    Vector3 player_head_pos = demo_scene.player.position;
-    player_head_pos.y += demo_scene.player.head_lerp;
-    UpdateFPSCameraAnimated(&demo_scene.camera, player_head_pos, &demo_scene.player.rotation, delta, player_input, demo_scene.player.is_grounded);
 
-    UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera);
+    UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, &player_input, &demo_scene.camera, delta);
+
+    UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
 
 }
 
 void DrawScene() {
     ClearBackground(RAYWHITE);
 
-    BeginMode3D(demo_scene.camera);
+    BeginMode3D(demo_scene.camera.camera);
 
     // Draw level
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {

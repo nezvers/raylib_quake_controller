@@ -5,6 +5,7 @@
 #include "rlights.h"
 #include "physics_ode.h"
 #include "character.h"
+#include "camera.h"
 
 #define MODEL_COUNT 5
 #define TEXTURE_COUNT 1
@@ -33,7 +34,7 @@ typedef struct {
 } DynamicMesh;
 
 typedef struct {
-    Camera camera;
+    CameraFPS camera;
     Character player;
     StaticMesh* static_list;
     DynamicMesh* dynamic_list;
