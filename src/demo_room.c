@@ -65,6 +65,16 @@ static void Gui(){
     DrawText("- Move keys: W, A, S, D, Space, Left-Ctrl", 15, 30, 10, BLACK);
     DrawText("- Look around: arrow keys or mouse", 15, 45, 10, BLACK);
     DrawText(TextFormat("- Velocity Len: (%06.3f)", Vector2Length((Vector2) { demo_scene.player.velocity.x, demo_scene.player.velocity.z })), 15, 60, 10, BLACK);
+
+    // Crosshair
+    int center_x = screen_width >> 1;
+    int center_y = screen_height >> 1;
+    const int extent = 5;
+    const Color croshair_color = PURPLE;
+    DrawLine(center_x - extent, center_y - extent, center_x - 2, center_y - 2, croshair_color);
+    DrawLine(center_x - extent, center_y + extent + 1, center_x - 2, center_y + 2 + 1, croshair_color);
+    DrawLine(center_x + extent + 1, center_y - extent, center_x + 2 + 1, center_y - 2, croshair_color);
+    DrawLine(center_x + extent + 1, center_y + extent + 1, center_x + 2 + 1, center_y + 2 + 1, croshair_color);
 }
 
 static void Exit() {

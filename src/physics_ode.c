@@ -9,6 +9,8 @@
 // a space can have multiple "worlds" for example you might have different
 // sub levels that never interact, or the inside and outside of a building
 
+// During collision step is saving last used instance for movement callbacks
+PhysicsInstance* current_instance;
 
 // Check ray collision against a space
 void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
@@ -125,7 +127,12 @@ dBodyID createBullet(PhysicsInstance* instance) {
     return obj;
 }
 
-
+void RollingDamping(dBodyID body) {
+    if (dBodyGetNumJoints(body) == 0) { return; }
+    float* angular = dBodyGetAngularVel(body);
+    dScaleVector3(angular, 0.95);
+    dBodySetAngularVel(body, angular[0], angular[1], angular[2]);
+}
 
 TrimeshData CreatePhysicsTrimeshData(Model plane) {
     int vertex_count = plane.meshes[0].vertexCount;
@@ -256,8 +263,11 @@ void DestroyPhysics(PhysicsInstance* instance) {
 }
 
 static void PhysicsCollisionCallback(void* data, dGeomID o1, dGeomID o2){
-    PhysicsInstance* instance = (PhysicsInstance*)data;
     int i;
+
+    PhysicsInstance* instance = (PhysicsInstance*)data;
+    current_instance = instance;
+
     // if (o1->body && o2->body) return;
 
     // exit without doing anything if the two bodies are connected by a joint
@@ -338,6 +348,8 @@ dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position,
     dRFromEulerAngles(R, rotation.x, rotation.y, rotation.z);
     dBodySetRotation(obj, R);
 
+    //dBodySetDamping(obj, 0.1f, 0.1f); // TODO: Doesn't fix sphere rolling speed
+
     dBodySetPosition(obj, position.x, position.y, position.z);
     return obj;
 }
@@ -362,9 +374,21 @@ dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 positi
     dBodySetRotation(obj, R);
 
     dBodySetPosition(obj, position.x, position.y, position.z);
+    dBodySetMovedCallback(obj, RollingDamping);
     return obj;
 }
 
 bool IsPhysicsPairColliding(PhysicsInstance* instance, dGeomID a, dGeomID b) {
     return dCollide(a, b, 1, &instance->contact_geom, sizeof(dContactGeom));
+}
+
+// TODO: Detect ground by collision normal
+bool IsPhysicsObjectOnGround(PhysicsInstance* instance, dBodyID body) {
+    int joint_count = dBodyGetNumJoints(body);
+    if (joint_count == 0) { return false; }
+    for (int i = 0; i < joint_count; i++) {
+        dJointID joint = dBodyGetJoint(body, i);
+
+    }
+    return true;
 }

@@ -102,7 +102,6 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
                 AppendDebugDrawSphere(point, 0.05f, SKYBLUE, 2.f);
             }
         }
-        //AppendDebugDrawSphere(start, 0.2f, SKYBLUE, 5.f);
     }
 }
 
