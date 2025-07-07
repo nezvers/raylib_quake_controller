@@ -3,3 +3,4 @@ out/
 build-emc/
 build/
 .vscode/settings.json
+enc_temp_folder/

@@ -11,6 +11,7 @@ varying vec3 fragNormal;
 // Input uniform values
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
+uniform float strength;
 
 // NOTE: Add your custom variables here
 
@@ -57,7 +58,7 @@ void main()
 
             if (lights[i].type == LIGHT_POINT)
             {
-                light = normalize(lights[i].position - fragPosition);
+                light = normalize(lights[i].position - fragPosition) * strength;
             }
 
             float NdotL = max(dot(normal, light), 0.0);
