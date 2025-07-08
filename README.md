@@ -1,5 +1,10 @@
 # Raylib Quake Controller
-Camera bobbing and strafe jump like in Quake, but in Raylib
+- Procedural `Camera bobbing` animation
+- `Strafe jump / Bunny Hopping` like in Quake (move faster by turning a side in movement direction)
+- `ODE physics` implementation
+- Modularized project for scaling complexity
+- Render texture for gameplay to control render resolution, applying post-effects
+- Separate GUI drawing (possible to get pixelated gameplay and hi-res GUI) 
 
 ## Build
 ```
