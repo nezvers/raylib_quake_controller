@@ -7,6 +7,7 @@
 #include "input.h"
 #include "models.h"
 #include "debug_draw.h"
+#include "physics_ode.h" // for setting transforms in draw
 
 
 Scene demo_scene;

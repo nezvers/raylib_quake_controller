@@ -3,8 +3,9 @@
 
 #include "raylib.h"
 #include "rlights.h"
-#include "physics_ode.h"
 #include "character.h"
+#include "physics.h"
+#include "physics_create.h"
 #include "camera.h"
 
 #define MODEL_COUNT 5

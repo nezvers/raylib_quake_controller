@@ -3,7 +3,6 @@
 #include "raymath.h"
 #include "scene.h"
 #include "debug_draw.h"
-#include "physics_ode.h"
 
 
 #define CROUCH_HEIGHT 0.f

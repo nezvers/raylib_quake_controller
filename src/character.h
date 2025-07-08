@@ -5,6 +5,7 @@
 #include "sounds.h"
 #include "input.h"
 #include "camera.h"
+#include "physics.h"
 #include "physics_ode.h"
 
 
