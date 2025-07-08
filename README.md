@@ -1,10 +1,11 @@
 # Raylib Quake Controller
-- Procedural `Camera bobbing` animation
-- `Strafe jump / Bunny Hopping` like in Quake (move faster by turning a side in movement direction)
-- `ODE physics` implementation
-- Modularized project for scaling complexity
-- Render texture for gameplay to control render resolution, applying post-effects
-- Separate GUI drawing (possible to get pixelated gameplay and hi-res GUI) 
+For simplified implementation just movement and camera animations check out [Core Features branch](https://github.com/nezvers/raylib_quake_controller/tree/core_features)    
+- Procedural `Camera bobbing` animation    
+- `Strafe jump / Bunny Hopping` like in Quake (move faster by turning a side in movement direction)    
+- `ODE physics` implementation    
+- Modularized project for scaling complexity    
+- Render texture for gameplay to control render resolution, applying post-effects    
+- Separate GUI drawing (possible to get pixelated gameplay and hi-res GUI)     
 
 ## Build
 ```
