@@ -42,6 +42,8 @@ typedef struct {
     Texture2D* texture_list;
     ShaderAttributes* shader_list;
     Model* model_list;
+    dGeomID* moving_platform_list;
+    PlatformMovementAnimation* platform_animation_list;
     PhysicsInstance physics;
 }Scene;
 
@@ -57,6 +59,6 @@ void DrawScene();
 
 void UnloadScene();
 
-bool IsPlayerGrounded(PhysicsInstance* instance, Character* character);
+bool IsCharacterGrounded(PhysicsInstance* instance, Character* character);
 
 #endif // SCENE_H

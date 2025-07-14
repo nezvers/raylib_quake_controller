@@ -22,7 +22,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     }
 #endif
 
-    body->is_grounded = IsPlayerGrounded(instance, body); // <= enables jumping
+    body->is_grounded = IsCharacterGrounded(instance, body); // <= enables jumping
 
     float* phys_velocity = dBodyGetLinearVel(body->phys.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};

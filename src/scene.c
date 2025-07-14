@@ -93,19 +93,19 @@ void CreateModels() {
     const Vector3 tower_size = (Vector3){ 16.f, 32.f, 16.f };
     int tower_model = CreateModelBox(&demo_scene, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     Vector3 tower_position = (Vector3){ 16.f, 16.f, 16.f };
-    dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, PHYS_SOLID, PHYS_ALL);
+    dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ 16.f, 16.f, -16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ -16.f, 16.f, 16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ -16.f, 16.f, -16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     // Dynamic
@@ -239,6 +239,6 @@ ShaderAttributes CreateShader() {
 }
 
 
-bool IsPlayerGrounded(PhysicsInstance* instance, Character* character) {
-    return IsPhysicsPairColliding(&demo_scene.physics, character->phys.footGeom, demo_scene.static_list[0].geom);
+bool IsCharacterGrounded(PhysicsInstance* instance, Character* character) {
+    return IsPhysicsPairColliding(&demo_scene.physics, character->phys.footGeom, instance->space);
 }

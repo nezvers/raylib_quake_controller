@@ -42,18 +42,28 @@ dGeomID CreatePhysicsPlaneStatic(PhysicsInstance* instance, Vector3 position, Ve
     return geometry_id;
 }
 
-dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 size, unsigned layer, unsigned mask) {
+dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask) {
     dGeomID geometry_id = dCreateBox(instance->space, size.x, size.y, size.z);
     dGeomSetPosition(geometry_id, position.x, position.y, position.z);
     dGeomSetCategoryBits(geometry_id, layer);
     dGeomSetCollideBits(geometry_id, mask);
+
+    dMatrix3 r;
+    dRFromEulerAngles(r, rotation.x, rotation.y, rotation.z);
+    dGeomSetRotation(geometry_id, r);
+    return geometry_id;
+}
+
+dGeomID CreatePhysicsBoxAnimated(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask, PlatformMovementAnimation* anim) {
+    dGeomID geometry_id = CreatePhysicsBoxStatic(instance, position, size, rotation, layer, mask);
+    dGeomSetData(geometry_id, anim);
     return geometry_id;
 }
 
 dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask) {
     dBodyID obj = dBodyCreate(instance->world);
     dGeomID geom;
-    dMatrix3 R;
+    dMatrix3 r;
     dMass m;
 
     geom = dCreateBox(instance->space, size.x, size.y, size.z);
@@ -66,8 +76,8 @@ dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position,
     dGeomSetCategoryBits(geom, layer);
     dGeomSetCollideBits(geom, mask);
 
-    dRFromEulerAngles(R, rotation.x, rotation.y, rotation.z);
-    dBodySetRotation(obj, R);
+    dRFromEulerAngles(r, rotation.x, rotation.y, rotation.z);
+    dBodySetRotation(obj, r);
 
     //dBodySetDamping(obj, 0.1f, 0.1f); // TODO: Doesn't fix sphere rolling speed
 
@@ -86,7 +96,7 @@ void RollingDamping(dBodyID body) {
 dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, float radius, unsigned layer, unsigned mask) {
     dBodyID obj = dBodyCreate(instance->world);
     dGeomID geom;
-    dMatrix3 R;
+    dMatrix3 r;
     dMass m;
 
     geom = dCreateSphere(instance->space, radius);
@@ -99,8 +109,8 @@ dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 positi
     dGeomSetCategoryBits(geom, layer);
     dGeomSetCollideBits(geom, mask);
 
-    dRFromEulerAngles(R, rotation.x, rotation.y, rotation.z);
-    dBodySetRotation(obj, R);
+    dRFromEulerAngles(r, rotation.x, rotation.y, rotation.z);
+    dBodySetRotation(obj, r);
 
     dBodySetPosition(obj, position.x, position.y, position.z);
     dBodySetMovedCallback(obj, RollingDamping);
@@ -110,37 +120,39 @@ dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 positi
 // TODO: 
 PhysicsCharacter CreatePhysicsPlayerBody(PhysicsInstance* instance, Vector3 position) {
     dMass m;
-    dMatrix3 R;
+    dMatrix3 r;
     dBodyID obj = dBodyCreate(instance->world);
-    dGeomID geom = dCreateCapsule(instance->space, 0.5, 1.0);
+    dGeomID capsule_geom = dCreateCapsule(instance->space, 0.5, 1.0);
 
     // foot sphere is a disabled geometry just for checking collisions
-    dGeomID footGeom = dCreateSphere(instance->space, 0.75);
-    dGeomDisable(footGeom);
+    dGeomID foot_geom = dCreateSphere(instance->space, 0.75);
+    dGeomDisable(foot_geom);
+    dGeomSetCategoryBits(foot_geom, PHYS_TRIGGER);
+    dGeomSetCollideBits(foot_geom, PHYS_ALL & ~PHYS_BULLET & ~PHYS_PLAYER);
 
     // capsule torso
     dMassSetCapsuleTotal(&m, 1, 3, 0.5, 1.0);
     dBodySetMass(obj, &m);
-    dGeomSetBody(geom, obj);
+    dGeomSetBody(capsule_geom, obj);
 
     // foot sphere
-    dGeomSetBody(footGeom, obj);
-    dGeomSetOffsetPosition(footGeom, 0, 0, 0.5);
+    dGeomSetBody(foot_geom, obj);
+    dGeomSetOffsetPosition(foot_geom, 0, 0, 0.5);
 
     // give the body a position and rotation
     dBodySetPosition(obj, position.x, position.y, position.z);
-    dRFromAxisAndAngle(R, 1.0f, 0, 0, 90.0f * DEG2RAD);
-    dBodySetRotation(obj, R);
+    dRFromAxisAndAngle(r, 1.0f, 0, 0, 90.0f * DEG2RAD);
+    dBodySetRotation(obj, r);
 
     dBodySetMaxAngularSpeed(obj, 0);
 
     // collision mask
-    dGeomSetCategoryBits(geom, PHYS_PLAYER);
-    dGeomSetCollideBits(geom, PHYS_ALL & (~PHYS_BULLET));
+    dGeomSetCategoryBits(capsule_geom, PHYS_PLAYER);
+    dGeomSetCollideBits(capsule_geom, PHYS_ALL & (~PHYS_BULLET));
     dBodySetGravityMode(obj, 8); // TODO: use this to remove gravity only to player
     int mode = dBodyGetGravityMode(obj);
 
-    PhysicsCharacter player_body = (PhysicsCharacter){ .body = obj, .geom = geom, .footGeom = footGeom };
+    PhysicsCharacter player_body = (PhysicsCharacter){ .body = obj, .geom = capsule_geom, .footGeom = foot_geom };
     instance->player = player_body;
     return player_body;
 }

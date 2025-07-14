@@ -35,9 +35,11 @@ typedef struct {
 
 enum PHYSICS_LAYERS {
     PHYS_SOLID = 0x0001, ///< Plane category >          0001
-    PHYS_PLAYER = 0x0002, ///< Player category >         0010
-    PHYS_DYNAMIC = 0x0004, ///< Objects category >        0100
-    PHYS_BULLET = 0x0008, ///< Player bullets category > 1000
+    PHYS_MOVING = 0x0002, ///< Moving platforms category >          0001
+    PHYS_PLAYER = 0x0004, ///< Player category >         0010
+    PHYS_DYNAMIC = 0x0008, ///< Objects category >        0100
+    PHYS_TRIGGER = 0x0010, ///< Trigger Zones > 1000
+    PHYS_BULLET = 0x0020, ///< Player bullets category > 1000
     PHYS_ALL = ~0L     ///< All categories >          11111111111111111111111111111111
 };
 

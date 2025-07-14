@@ -9,8 +9,13 @@
 // a space can have multiple "worlds" for example you might have different
 // sub levels that never interact, or the inside and outside of a building
 
-// During collision step is saving last used instance for movement callbacks
-PhysicsInstance* current_instance;
+// Contact presets
+dSurfaceParameters solid_surface;
+dSurfaceParameters trigger_surface;
+dSurfaceParameters moving_surface;
+dSurfaceParameters player_surface;
+dSurfaceParameters dynamic_surface;
+
 
 // Check ray collision against a space
 void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
@@ -142,6 +147,37 @@ void setTransformCylinder(const float pos[3], const float R[12], Matrix* matrix,
 void InitPhysics() {
     // TODO: move dInitODE2 to global initialization
     dInitODE2(0);
+
+    solid_surface.mode = 0;
+    solid_surface.mu = dInfinity;
+    solid_surface.bounce = 0.0;
+    solid_surface.bounce_vel = 0.0;
+    solid_surface.soft_cfm = 0.0;
+
+    trigger_surface.mode = 0;
+    trigger_surface.mu = dInfinity;
+    trigger_surface.bounce = 0.0;
+    trigger_surface.bounce_vel = 0.0;
+    trigger_surface.soft_cfm = 0.0;
+
+    // moving platform
+    moving_surface.mode |= dContactMotion1 | dContactMotion2 | dContactMotionN | dContactFDir1;
+    moving_surface.mu = dInfinity;
+    moving_surface.bounce = 0.0;
+    moving_surface.bounce_vel = 0.0;
+    moving_surface.soft_cfm = 0.0;
+
+    player_surface.mode = dContactSlip1 | dContactSlip2;
+    player_surface.mu = dInfinity;
+    player_surface.bounce = 0.0;
+    player_surface.bounce_vel = 0.0;
+    player_surface.soft_cfm = 0.0;
+
+    dynamic_surface.mode = dContactBounce | dContactRolling | dContactApprox1_N;
+    dynamic_surface.mu = dInfinity;
+    dynamic_surface.bounce = 0.0;
+    dynamic_surface.bounce_vel = 0.0; // 0.1;
+    dynamic_surface.soft_cfm = 0.0;
 }
 
 PhysicsInstance CreatePhysics() {
@@ -152,6 +188,8 @@ PhysicsInstance CreatePhysics() {
     instance.space = dHashSpaceCreate(NULL);
     instance.contact_group = dJointGroupCreate(0);
     dWorldSetGravity(instance.world, 0, -9.8, 0);
+
+
 
     return instance;
 }
@@ -176,27 +214,63 @@ static void PhysicsCollisionCallback(void* data, dGeomID o1, dGeomID o2){
     int i;
 
     PhysicsInstance* instance = (PhysicsInstance*)data;
-    current_instance = instance;
 
     // if (o1->body && o2->body) return;
 
-    // exit without doing anything if the two bodies are connected by a joint
+    // exit without doing anything if the two bodies are already jointed
     dBodyID b1 = dGeomGetBody(o1);
     dBodyID b2 = dGeomGetBody(o2);
-    if (b1 && b2 && dAreConnectedExcluding(b1, b2, dJointTypeContact))
+    if (b1 && b2 && dAreConnectedExcluding(b1, b2, dJointTypeContact)) { return; }
+
+    unsigned int o1_category = dGeomGetCategoryBits(o1);
+    unsigned int o2_category = dGeomGetCategoryBits(o2);
+    unsigned int sum_category = o1_category | o2_category;
+
+    dSurfaceParameters contact_surface;
+    contact_surface.mu = dInfinity;
+    if (sum_category & PHYS_TRIGGER) {
+        contact_surface = trigger_surface;
+        // TODO: process trigger collision
         return;
-    bool is_player = b1 == instance->player.body || b2 == instance->player.body;
+    }
+    if (sum_category & PHYS_MOVING) {
+        // https://ode.org/wiki/index.php/Moving_Platforms
+
+        dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
+        for (i = 0; i < MAX_CONTACTS; i++) {
+            contact[i].surface = moving_surface;
+
+            const dReal* normal = contact[i].geom.normal;
+            dVector3 fdir1, fdir2;
+            dPlaneSpace(normal, fdir1, fdir2);
+
+            contact[i].fdir1[0] = fdir1[0];
+            contact[i].fdir1[1] = fdir1[1];
+            contact[i].fdir1[2] = fdir1[2];
+
+            dReal* pos = contact[i].geom.pos;
+            //dReal* relpos = pos - center;
+            //pointvel = plat_linvel + cross(plat_angvel, relpos);
+        }
+        return;
+    }
+    else if (sum_category & PHYS_PLAYER) {
+        contact_surface.mode = player_surface.mode;
+    }
+    else if (sum_category & PHYS_DYNAMIC) {
+        contact_surface.mode = dynamic_surface.mode;
+    }
+    if (sum_category & PHYS_SOLID) {
+        contact_surface.mode |= solid_surface.mode;
+    }
+
     dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
     for (i = 0; i < MAX_CONTACTS; i++) {
-        /*contact[i].surface.mode = dContactBounce | dContactSoftCFM | dContactApprox1;*/
-        contact[i].surface.mode = is_player ? (dContactSlip1 | dContactSlip2) : dContactBounce;
-        contact[i].surface.mu = dInfinity;
-        contact[i].surface.bounce = 0.0;
-        contact[i].surface.bounce_vel = 0.1;
-        /*contact[i].surface.soft_cfm = 0.01;*/
+        contact[i].surface = contact_surface;
     }
-    int numc = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom,
-        sizeof(dContact));
+
+    // Collision joint
+    int numc = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
     if (numc) {
         dMatrix3 RI;
         dRSetIdentity(RI);
