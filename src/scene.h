@@ -39,12 +39,13 @@ typedef struct {
     Character player;
     StaticMesh* static_list;
     DynamicMesh* dynamic_list;
+    DynamicMesh* platform_list;
     Texture2D* texture_list;
     ShaderAttributes* shader_list;
     Model* model_list;
-    dGeomID* moving_platform_list;
     PlatformMovementAnimation* platform_animation_list;
     PhysicsInstance physics;
+    float delta_time;
 }Scene;
 
 extern Scene demo_scene;

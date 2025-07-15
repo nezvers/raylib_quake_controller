@@ -6,14 +6,17 @@
 typedef struct {
     Vector3 pos1;
     Vector3 pos2;
+    Vector3 prev;
     float t;
+    float multiply;
+    float* delta;
 } PlatformMovementAnimation;
 
 dGeomID CreatePhysicsPlaneStatic(PhysicsInstance* instance, Vector3 position, Vector3 normal, unsigned layer, unsigned mask);
 
-dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask);
+dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask);
 
-dGeomID CreatePhysicsBoxAnimated(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask, PlatformMovementAnimation* anim);
+dBodyID CreatePhysicsBoxAnimated(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask);
 
 dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask);
 

@@ -1,5 +1,7 @@
 
 #include "physics_create.h"
+#include "raymath.h"
+#include "easing.h"
 
 TrimeshData CreatePhysicsTrimeshData(Model plane) {
     int vertex_count = plane.meshes[0].vertexCount;
@@ -42,7 +44,7 @@ dGeomID CreatePhysicsPlaneStatic(PhysicsInstance* instance, Vector3 position, Ve
     return geometry_id;
 }
 
-dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask) {
+dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask) {
     dGeomID geometry_id = dCreateBox(instance->space, size.x, size.y, size.z);
     dGeomSetPosition(geometry_id, position.x, position.y, position.z);
     dGeomSetCategoryBits(geometry_id, layer);
@@ -54,12 +56,6 @@ dGeomID CreatePhysicsBoxStatic(PhysicsInstance* instance, Vector3 position, Vect
     return geometry_id;
 }
 
-dGeomID CreatePhysicsBoxAnimated(PhysicsInstance* instance, Vector3 position, Vector3 size, Vector3 rotation, unsigned layer, unsigned mask, PlatformMovementAnimation* anim) {
-    dGeomID geometry_id = CreatePhysicsBoxStatic(instance, position, size, rotation, layer, mask);
-    dGeomSetData(geometry_id, anim);
-    return geometry_id;
-}
-
 dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask) {
     dBodyID obj = dBodyCreate(instance->world);
     dGeomID geom;
@@ -67,14 +63,12 @@ dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position,
     dMass m;
 
     geom = dCreateBox(instance->space, size.x, size.y, size.z);
-    dMassSetBoxTotal(&m, 1, 0.5, 0.5, 0.5);
-
-    // set the bodies mass and the newly created geometry
-    dGeomSetBody(geom, obj);
-    dBodySetMass(obj, &m);
-
     dGeomSetCategoryBits(geom, layer);
     dGeomSetCollideBits(geom, mask);
+
+    dGeomSetBody(geom, obj);
+    dMassSetBoxTotal(&m, 1, 0.5, 0.5, 0.5);
+    dBodySetMass(obj, &m);
 
     dRFromEulerAngles(r, rotation.x, rotation.y, rotation.z);
     dBodySetRotation(obj, r);
@@ -85,6 +79,50 @@ dBodyID CreatePhysicsBodyBoxDynamic(PhysicsInstance* instance, Vector3 position,
     return obj;
 }
 
+void PlatformCallback(dBodyID body_id) {
+    PlatformMovementAnimation* plat_anim = dBodyGetData(body_id);
+    if (plat_anim == NULL) { return; }
+
+    plat_anim->t += *plat_anim->delta * plat_anim->multiply;
+    plat_anim->t -= (int)plat_anim->t;
+
+    float t = plat_anim->t * 2.f;
+    if (t > 1.f) { t = 2.f - t; }
+    t = cubicEaseInOutf(t);
+
+    Vector3 pos = Vector3Lerp(plat_anim->pos1, plat_anim->pos2, t);
+    Vector3 diff = Vector3Subtract(pos, plat_anim->prev);
+    if (*plat_anim->delta < 0.0001f) { return; }
+    Vector3 velocity = Vector3Scale(diff, 1.f / *plat_anim->delta);
+    plat_anim->prev = pos;
+    dBodySetPosition(body_id, pos.x, pos.y, pos.z);
+    dBodySetLinearVel(body_id, velocity.x, velocity.y, velocity.z);
+}
+
+dBodyID CreatePhysicsBoxAnimated(PhysicsInstance* instance, Vector3 position, Vector3 rotation, Vector3 size, unsigned layer, unsigned mask) {
+    dBodyID obj = dBodyCreate(instance->world);
+    dGeomID geom;
+    dMatrix3 r;
+    dMass m;
+
+    geom = dCreateBox(instance->space, size.x, size.y, size.z);
+    dGeomSetCategoryBits(geom, layer);
+    dGeomSetCollideBits(geom, mask);
+
+    dGeomSetBody(geom, obj);
+    dMassSetBoxTotal(&m, 1, 0.5, 0.5, 0.5);
+    dBodySetMass(obj, &m);
+
+    dRFromEulerAngles(r, rotation.x, rotation.y, rotation.z);
+    dBodySetRotation(obj, r);
+
+    dBodySetKinematic(obj);
+    dBodySetMovedCallback(obj, PlatformCallback);
+    //dBodySetDamping(obj, 0.1f, 0.1f); // TODO: Doesn't fix sphere rolling speed
+
+    dBodySetPosition(obj, position.x, position.y, position.z);
+    return obj;
+}
 
 void RollingDamping(dBodyID body) {
     if (dBodyGetNumJoints(body) == 0) { return; }
@@ -116,6 +154,7 @@ dBodyID CreatePhysicsBodySphereDynamic(PhysicsInstance* instance, Vector3 positi
     dBodySetMovedCallback(obj, RollingDamping);
     return obj;
 }
+
 
 // TODO: 
 PhysicsCharacter CreatePhysicsPlayerBody(PhysicsInstance* instance, Vector3 position) {

@@ -188,8 +188,11 @@ PhysicsInstance CreatePhysics() {
     instance.space = dHashSpaceCreate(NULL);
     instance.contact_group = dJointGroupCreate(0);
     dWorldSetGravity(instance.world, 0, -9.8, 0);
-
-
+    dWorldSetERP(instance.world, 0.2);
+    dWorldSetCFM(instance.world, 1e-5);
+    dWorldSetContactMaxCorrectingVel(instance.world, 0.9); // default is infinity
+    dWorldSetContactSurfaceLayer(instance.world, 0.001); // default value is 0
+    dWorldSetAutoDisableFlag(instance.world, 0);
 
     return instance;
 }

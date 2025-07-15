@@ -1,7 +1,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include <ode/ode.h>
+#include <ode/ode.h> // https://www.alsprogrammingresource.com/basic_ode.html
 #include "raylib.h"
 
 typedef struct {

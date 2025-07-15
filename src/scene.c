@@ -53,6 +53,25 @@ int SceneAddBoxDynamic(Scene* scene, int model_id, dBodyID geom_id) {
     return -1;
 }
 
+int SceneAddPlatform(Scene* scene, int model_id, dBodyID geom_id, PlatformMovementAnimation anim) {
+    DynamicMesh dynamic_mesh = { 0 };
+    dynamic_mesh.model = model_id;
+    dynamic_mesh.body = geom_id;
+
+    int anim_i = arrlen(scene->platform_animation_list);
+    arrput(scene->platform_animation_list, anim);
+    if (arrlen(scene->platform_animation_list) > anim_i) {
+        dBodySetData(dynamic_mesh.body, &scene->platform_animation_list[anim_i]);
+    }
+
+    int i = arrlen(scene->platform_list);
+    arrput(scene->platform_list, dynamic_mesh);
+    if (arrlen(scene->platform_list) > i) {
+        return i;
+    }
+    return -1;
+}
+
 int SceneAddSphereDynamic(Scene* scene, int model_id, dBodyID geom_id) {
     DynamicMesh dynamic_mesh = { 0 };
     dynamic_mesh.model = model_id;
@@ -71,6 +90,9 @@ int SceneAddSphereDynamic(Scene* scene, int model_id, dBodyID geom_id) {
 void CreateModels() {
     demo_scene.static_list = NULL;
     demo_scene.dynamic_list = NULL;
+    demo_scene.platform_list = NULL;
+    demo_scene.platform_animation_list = NULL;
+    demo_scene.delta_time = 0.f;
 
     // Assign texture and shader
     demo_scene.texture_list = NULL;
@@ -93,19 +115,19 @@ void CreateModels() {
     const Vector3 tower_size = (Vector3){ 16.f, 32.f, 16.f };
     int tower_model = CreateModelBox(&demo_scene, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     Vector3 tower_position = (Vector3){ 16.f, 16.f, 16.f };
-    dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
+    dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ 16.f, 16.f, -16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ -16.f, 16.f, 16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     tower_position = (Vector3){ -16.f, 16.f, -16.f };
-    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, tower_size, (Vector3) { 0 }, PHYS_SOLID, PHYS_ALL);
+    tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
 
     // Dynamic
@@ -122,6 +144,15 @@ void CreateModels() {
     int sphere_model = CreateModelSphere(&demo_scene, sphere_radius, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID sphere_body = CreatePhysicsBodySphereDynamic(&demo_scene.physics, sphere_position, sphere_rotation, sphere_radius, PHYS_DYNAMIC, PHYS_ALL);
     SceneAddSphereDynamic(&demo_scene, sphere_model, sphere_body);
+
+    // Platform
+    const Vector3 platform_size = (Vector3){ 4.f, 1.f, 4.f };
+    const Vector3 platform_rotation = (Vector3){ 0, 0, 0 };
+    Vector3 platform_position = (Vector3){ 0.f, -0.f, -16.f };
+    PlatformMovementAnimation platform_animation = (PlatformMovementAnimation){ platform_position, (Vector3) { 0.f, 8.f, -16.f }, platform_position, 0, 0.2f, &demo_scene.delta_time };
+    int platform_model = CreateModelBox(&demo_scene, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
+    SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
 }
 
 void CreateScene() {
@@ -148,6 +179,7 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
 }
 
 void UpdateScene(float delta) {
+    demo_scene.delta_time = delta;
     UpdateDebugDraw(delta);
     PlayerInput player_input = UpdateInput();
     demo_scene.player.rotation.x -= player_input.mouse.x;
@@ -181,6 +213,15 @@ void DrawScene() {
             (float*)dBodyGetRotation(dynamic_mesh.body),
             &demo_scene.model_list[dynamic_mesh.model].transform);
         DrawModel(demo_scene.model_list[dynamic_mesh.model], Vector3Zero(), 1.0f, WHITE);
+    }
+    for (int i = 0; i < arrlen(demo_scene.platform_list); i++) {
+        DynamicMesh dynamic_mesh = demo_scene.platform_list[i];
+        Model *model = &demo_scene.model_list[dynamic_mesh.model];
+        SetPhysicsTransform(
+            (float*)dBodyGetPosition(dynamic_mesh.body),
+            (float*)dBodyGetRotation(dynamic_mesh.body),
+            &(model->transform));
+        DrawModel(*model, Vector3Zero(), 1.0f, WHITE);
     }
 
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
