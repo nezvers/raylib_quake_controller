@@ -148,7 +148,7 @@ void CreateModels() {
     // Platform
     const Vector3 platform_size = (Vector3){ 4.f, 1.f, 4.f };
     const Vector3 platform_rotation = (Vector3){ 0, 0, 0 };
-    Vector3 platform_position = (Vector3){ 0.f, -0.f, -16.f };
+    Vector3 platform_position = (Vector3){ 0.f, -0.5f, -16.f };
     PlatformMovementAnimation platform_animation = (PlatformMovementAnimation){ platform_position, (Vector3) { 0.f, 8.f, -16.f }, platform_position, 0, 0.2f, &demo_scene.delta_time };
     int platform_model = CreateModelBox(&demo_scene, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
