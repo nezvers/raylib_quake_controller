@@ -46,6 +46,7 @@ set(ODE_WITH_DEMOS OFF CACHE BOOL "" FORCE)
 set(ODE_WITH_TESTS OFF CACHE BOOL "" FORCE)
 set(ODE_DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(ODE_WITH_OPCODE ON)
 
 if (${PLATFORM} STREQUAL "Web")
 # unset(PENTIUM CACHE)
@@ -78,6 +79,7 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES} )
 # include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/physics")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 target_link_libraries(${PROJECT_NAME} PRIVATE ODE)
@@ -89,7 +91,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ODE)
 
 # Output directory structure configuration.
 if (${PLATFORM} STREQUAL "Web")
-unset(PENTIUM CACHE)
+unset(PENTIUM CACHE) # TODO: Doesn't work for emscripten's build
 
 else()
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")

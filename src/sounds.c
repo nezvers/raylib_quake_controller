@@ -1,5 +1,6 @@
 #include "sounds.h"
 #include "app_state.h"
+#include "raymath.h"
 
 
 Sound sound_list[SOUNDS_COUNT];
@@ -33,4 +34,10 @@ void SetAppSoundVolume(int value) {
 
 void PlayAppSound(int index) {
     PlaySound(sound_list[index]);
+}
+
+void RandomAppSoundPitch(int index, float min_pitch, float max_pitch) {
+    float t = (float)GetRandomValue(0, 100) * 0.01f;
+    float pitch = Lerp(min_pitch, max_pitch, t);
+    SetSoundPitch(sound_list[index], pitch);
 }

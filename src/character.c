@@ -3,7 +3,7 @@
 #include "raymath.h"
 #include "scene.h"
 #include "debug_draw.h"
-#include "physics_ode.h"
+#include "sounds.h"
 
 
 #define CROUCH_HEIGHT 0.f
@@ -23,7 +23,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     }
 #endif
 
-    body->is_grounded = IsPlayerGrounded(instance, body); // <= enables jumping
+    body->is_grounded = IsCharacterGrounded(instance, body); // <= enables jumping
 
     float* phys_velocity = dBodyGetLinearVel(body->phys.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
@@ -33,7 +33,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     if (body->is_grounded && input->jump) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false;
-        PlayAppSound(JUMP_HUH);
+        PlayAppSound(SND_JUMP_HUH);
     }
 
     Vector3 front_vec = (Vector3){ sin(rot), 0.f, cos(rot) };
@@ -87,7 +87,12 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
     player_head_pos.y += body->head_lerp;
     UpdateFPSCameraAnimated(&demo_scene.camera, player_head_pos, &body->rotation, delta, input, body->is_grounded, &body->look_dir);
 
+    camera->offset.y = Lerp(camera->offset.y, 0.f, 10.f * delta);
     if (input->shoot) {
+        RandomAppSoundPitch(SND_GUN_1, 0.95f, 1.05f);
+        PlayAppSound(SND_GUN_1);
+        camera->offset.y = 0.07f;
+
         Vector3 start = demo_scene.camera.camera.position;
         const float distance = 20.f;
         Vector3 end = Vector3Add(start, Vector3Scale(body->look_dir, distance));
@@ -115,7 +120,7 @@ Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter p
         rotation, 
         false, 
         head_offset, 
-        sound_list[JUMP_HUH], 
+        sound_list[SND_JUMP_HUH], 
         phys,
     };
     return character;

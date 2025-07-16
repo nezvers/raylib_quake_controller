@@ -1,0 +1,313 @@
+#include "physics_ode.h"
+#include "raymath.h"
+
+#include <ode/odemath.h>
+#include <ode/collision.h>
+#include <ode/objects.h>
+
+
+// a space can have multiple "worlds" for example you might have different
+// sub levels that never interact, or the inside and outside of a building
+
+// Contact presets
+dSurfaceParameters solid_surface;
+dSurfaceParameters trigger_surface;
+dSurfaceParameters moving_surface;
+dSurfaceParameters player_surface;
+dSurfaceParameters dynamic_surface;
+
+
+// Check ray collision against a space
+void RaycastPhysicsCallback(void* data, dGeomID Geometry1, dGeomID Geometry2) {
+    PhysicsInstance* instance = (PhysicsInstance*)data;
+
+    // Check collisions
+    dContact Contacts[MAX_CONTACTS];
+    int Count = dCollide(Geometry1, Geometry2, MAX_CONTACTS, &Contacts[0].geom, sizeof(dContact));
+    for (int i = 0; i < Count; i++) {
+
+        // Check depth against current closest hit
+        if (Contacts[i].geom.depth < instance->ray_cast.distance) {
+            instance->ray_cast.position = *(Vector3*)(Contacts[i].geom.pos);
+            instance->ray_cast.distance = Contacts[i].geom.depth;
+            instance->ray_cast.other_geom = Contacts[i].geom.g2;
+            instance->ray_cast.other_body = dGeomGetBody(Contacts[i].geom.g2);
+            
+            // TODO: Get collision geom / body
+            // TODO: Get collision layer
+        }
+    }
+}
+
+// Performs raycasting on a space and returns the point of collision. Return false for no hit.
+bool RaycastPhysics(PhysicsInstance* instance, const Vector3 start, Vector3 end, unsigned layer, unsigned mask) {
+
+    // Calculate direction
+    dVector3 dir;
+    dSubtractVectors3(dir, *(dVector3*)&end, *(dVector3*)&start);
+
+    // Get length
+    dReal length = dCalcVectorLength3(dir);
+    dReal inverse_length = dRecip(length);
+
+    // Normalize
+    dScaleVector3(dir, inverse_length);
+
+    // Create ray inside physics instance
+    instance->ray_cast.ray = dCreateRay(0, length);
+    dGeomSetCategoryBits(instance->ray_cast.ray, layer);
+    dGeomSetCollideBits(instance->ray_cast.ray, mask);
+
+    dGeomRaySet(instance->ray_cast.ray, start.x, start.y, start.z, dir[0], dir[1], dir[2]);
+
+    // Check collisions
+    instance->ray_cast.distance = dInfinity;
+    dSpaceCollide2(instance->ray_cast.ray, (dGeomID)instance->space, instance, &RaycastPhysicsCallback);
+
+    // Cleanup
+    dGeomDestroy(instance->ray_cast.ray);
+
+    // Check for hit
+    if (instance->ray_cast.distance != dInfinity) {
+        return true;
+    }
+
+    return false;
+}
+
+
+
+// set a raylib model matrix from an ODE rotation matrix and position
+void SetPhysicsTransform(const float pos[3], const float R[12], Matrix* matrix){
+    matrix->m0 = R[0];
+    matrix->m1 = R[4];
+    matrix->m2 = R[8];
+    matrix->m3 = 0;
+    matrix->m4 = R[1];
+    matrix->m5 = R[5];
+    matrix->m6 = R[9];
+    matrix->m7 = 0;
+    matrix->m8 = R[2];
+    matrix->m9 = R[6];
+    matrix->m10 = R[10];
+    matrix->m11 = 0;
+    matrix->m12 = pos[0];
+    matrix->m13 = pos[1];
+    matrix->m14 = pos[2];
+    matrix->m15 = 1;
+}
+
+void setTransformCylinder(const float pos[3], const float R[12], Matrix* matrix, float length)
+{
+    Matrix m;
+    m.m0 = R[0];
+    m.m1 = R[4];
+    m.m2 = R[8];
+    m.m3 = 0;
+    m.m4 = R[1];
+    m.m5 = R[5];
+    m.m6 = R[9];
+    m.m7 = 0;
+    m.m8 = R[2];
+    m.m9 = R[6];
+    m.m10 = R[10];
+    m.m11 = 0;
+    m.m12 = pos[0];
+    m.m13 = pos[1];
+    m.m14 = pos[2];
+    m.m15 = 1;
+
+    // rotate because the cylinder axis looks diferent
+    Matrix r = MatrixRotateX(DEG2RAD * 90);
+    Matrix nMatrix = MatrixMultiply(r, m);
+
+    // move the origin of the model to the center
+    // -1.5 is because is half o 3 (the length of the cylinder)
+    Matrix t = MatrixTranslate(0, length * -0.5f, 0);
+    nMatrix = MatrixMultiply(t, nMatrix);
+
+    matrix->m0 = nMatrix.m0;
+    matrix->m1 = nMatrix.m1;
+    matrix->m2 = nMatrix.m2;
+    matrix->m3 = nMatrix.m3;
+    matrix->m4 = nMatrix.m4;
+    matrix->m5 = nMatrix.m5;
+    matrix->m6 = nMatrix.m6;
+    matrix->m7 = nMatrix.m7;
+    matrix->m8 = nMatrix.m8;
+    matrix->m9 = nMatrix.m9;
+    matrix->m10 = nMatrix.m10;
+    matrix->m11 = nMatrix.m11;
+    matrix->m12 = nMatrix.m12;
+    matrix->m13 = nMatrix.m13;
+    matrix->m14 = nMatrix.m14;
+    matrix->m15 = nMatrix.m15;
+}
+
+void InitPhysics() {
+    // TODO: move dInitODE2 to global initialization
+    dInitODE2(0);
+
+    solid_surface.mode = 0;
+    solid_surface.mu = dInfinity;
+    solid_surface.bounce = 0.0;
+    solid_surface.bounce_vel = 0.0;
+    solid_surface.soft_cfm = 0.0;
+
+    trigger_surface.mode = 0;
+    trigger_surface.mu = dInfinity;
+    trigger_surface.bounce = 0.0;
+    trigger_surface.bounce_vel = 0.0;
+    trigger_surface.soft_cfm = 0.0;
+
+    // moving platform
+    moving_surface.mode |= dContactMotion1 | dContactMotion2 | dContactMotionN | dContactFDir1;
+    moving_surface.mu = dInfinity;
+    moving_surface.bounce = 0.0;
+    moving_surface.bounce_vel = 0.0;
+    moving_surface.soft_cfm = 0.0;
+
+    player_surface.mode = dContactSlip1 | dContactSlip2;
+    player_surface.mu = dInfinity;
+    player_surface.bounce = 0.0;
+    player_surface.bounce_vel = 0.0;
+    player_surface.soft_cfm = 0.0;
+
+    dynamic_surface.mode = dContactBounce | dContactRolling | dContactApprox1_N;
+    dynamic_surface.mu = dInfinity;
+    dynamic_surface.bounce = 0.0;
+    dynamic_surface.bounce_vel = 0.0; // 0.1;
+    dynamic_surface.soft_cfm = 0.0;
+}
+
+PhysicsInstance CreatePhysics() {
+    InitPhysics();
+    
+    PhysicsInstance instance = { 0 };
+    instance.world = dWorldCreate();
+    instance.space = dHashSpaceCreate(NULL);
+    instance.contact_group = dJointGroupCreate(0);
+    dWorldSetGravity(instance.world, 0, -9.8, 0);
+    dWorldSetERP(instance.world, 0.2);
+    dWorldSetCFM(instance.world, 1e-5);
+    dWorldSetContactMaxCorrectingVel(instance.world, 0.9); // default is infinity
+    dWorldSetContactSurfaceLayer(instance.world, 0.001); // default value is 0
+    dWorldSetAutoDisableFlag(instance.world, 0);
+
+    return instance;
+}
+
+void ClosePhysics() {
+    dCloseODE();
+}
+
+void DestroyPhysics(PhysicsInstance* instance) {
+    //TODO: free(planeGeom.indexes);
+
+    if (instance == NULL) {
+        return;
+    }
+    dJointGroupEmpty(instance->contact_group);
+    dJointGroupDestroy(instance->contact_group);
+    dSpaceDestroy(instance->space);
+    dWorldDestroy(instance->world);
+}
+
+static void PhysicsCollisionCallback(void* data, dGeomID o1, dGeomID o2){
+    int i;
+
+    PhysicsInstance* instance = (PhysicsInstance*)data;
+
+    // if (o1->body && o2->body) return;
+
+    // exit without doing anything if the two bodies are already jointed
+    dBodyID b1 = dGeomGetBody(o1);
+    dBodyID b2 = dGeomGetBody(o2);
+    if (b1 && b2 && dAreConnectedExcluding(b1, b2, dJointTypeContact)) { return; }
+
+    unsigned int o1_category = dGeomGetCategoryBits(o1);
+    unsigned int o2_category = dGeomGetCategoryBits(o2);
+    unsigned int sum_category = o1_category | o2_category;
+
+    dSurfaceParameters contact_surface;
+    contact_surface.mu = dInfinity;
+    if (sum_category & PHYS_TRIGGER) {
+        contact_surface = trigger_surface;
+        // TODO: process trigger collision
+        return;
+    }
+    if (sum_category & PHYS_MOVING) {
+        // https://ode.org/wiki/index.php/Moving_Platforms
+
+        dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
+        for (i = 0; i < MAX_CONTACTS; i++) {
+            contact[i].surface = moving_surface;
+
+            const dReal* normal = contact[i].geom.normal;
+            dVector3 fdir1, fdir2;
+            dPlaneSpace(normal, fdir1, fdir2);
+
+            contact[i].fdir1[0] = fdir1[0];
+            contact[i].fdir1[1] = fdir1[1];
+            contact[i].fdir1[2] = fdir1[2];
+
+            dReal* pos = contact[i].geom.pos;
+            //dReal* relpos = pos - center;
+            //pointvel = plat_linvel + cross(plat_angvel, relpos);
+        }
+        return;
+    }
+    else if (sum_category & PHYS_PLAYER) {
+        contact_surface.mode = player_surface.mode;
+    }
+    else if (sum_category & PHYS_DYNAMIC) {
+        contact_surface.mode = dynamic_surface.mode;
+    }
+    if (sum_category & PHYS_SOLID) {
+        contact_surface.mode |= solid_surface.mode;
+    }
+
+    dContact contact[MAX_CONTACTS]; // up to MAX_CONTACTS contacts per body-body
+    for (i = 0; i < MAX_CONTACTS; i++) {
+        contact[i].surface = contact_surface;
+    }
+
+    // Collision joint
+    int numc = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
+    if (numc) {
+        dMatrix3 RI;
+        dRSetIdentity(RI);
+        for (i = 0; i < numc; i++) {
+            dJointID c = dJointCreateContact(instance->world, instance->contact_group, contact + i);
+            dJointAttach(c, b1, b2);
+        }
+    }
+}
+
+void UpdatePhysics(PhysicsInstance* instance, float delta_time) {
+    // check for collisions
+    dSpaceCollide(instance->space, instance, &PhysicsCollisionCallback);
+
+    // step the world
+    if (delta_time > 0.f) {
+        dWorldQuickStep(instance->world, delta_time);
+    }
+    dJointGroupEmpty(instance->contact_group);
+}
+
+
+
+bool IsPhysicsPairColliding(PhysicsInstance* instance, dGeomID a, dGeomID b) {
+    return dCollide(a, b, 1, &instance->contact_geom, sizeof(dContactGeom));
+}
+
+// TODO: Detect ground by collision normal
+bool IsPhysicsObjectOnGround(PhysicsInstance* instance, dBodyID body) {
+    int joint_count = dBodyGetNumJoints(body);
+    if (joint_count == 0) { return false; }
+    for (int i = 0; i < joint_count; i++) {
+        dJointID joint = dBodyGetJoint(body, i);
+
+    }
+    return true;
+}

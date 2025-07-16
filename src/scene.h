@@ -3,8 +3,9 @@
 
 #include "raylib.h"
 #include "rlights.h"
-#include "physics_ode.h"
 #include "character.h"
+#include "physics.h"
+#include "physics_create.h"
 #include "camera.h"
 
 #define MODEL_COUNT 5
@@ -38,10 +39,13 @@ typedef struct {
     Character player;
     StaticMesh* static_list;
     DynamicMesh* dynamic_list;
+    DynamicMesh* platform_list;
     Texture2D* texture_list;
     ShaderAttributes* shader_list;
     Model* model_list;
+    PlatformMovementAnimation* platform_animation_list;
     PhysicsInstance physics;
+    float delta_time;
 }Scene;
 
 extern Scene demo_scene;
@@ -56,6 +60,6 @@ void DrawScene();
 
 void UnloadScene();
 
-bool IsPlayerGrounded(PhysicsInstance* instance, Character* character);
+bool IsCharacterGrounded(PhysicsInstance* instance, Character* character);
 
 #endif // SCENE_H
