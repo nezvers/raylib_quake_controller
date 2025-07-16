@@ -28,7 +28,7 @@ void UpdateFPSCameraAnimated(CameraFPS* cam, Vector3 position, Vector2* rotation
 
 
     /* Left & Right */
-    Vector3 yaw = Vector3RotateByAxisAngle(target_offset, up, rotation->x);
+    Vector3 yaw = Vector3RotateByAxisAngle(target_offset, up, rotation->x + cam->offset.x);
 
     {
         // Clamp view up
@@ -47,7 +47,7 @@ void UpdateFPSCameraAnimated(CameraFPS* cam, Vector3 position, Vector2* rotation
     Vector3 right = Vector3Normalize(Vector3CrossProduct(yaw, up));
 
     // Rotate view vector around right axis
-    *look_dir = Vector3RotateByAxisAngle(yaw, right, -rotation->y - cam->lean.y);
+    *look_dir = Vector3RotateByAxisAngle(yaw, right, -rotation->y - cam->lean.y + cam->offset.y);
 
     // Head animation
 
@@ -78,4 +78,5 @@ void UpdateFPSCameraAnimated(CameraFPS* cam, Vector3 position, Vector2* rotation
     cam->camera.position = Vector3Add(cam->camera.position, Vector3Scale(bobbing, cam->walk_lerp));
 
     cam->camera.target = Vector3Add(cam->camera.position, *look_dir);
+    
 }

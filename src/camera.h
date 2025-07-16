@@ -8,6 +8,7 @@ typedef struct {
     float bob_timer;
     float walk_lerp;
     Vector2 lean;
+    Vector2 offset; // used for camera shake
     Camera camera;
 } CameraFPS;
 

@@ -87,8 +87,12 @@ void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInp
     player_head_pos.y += body->head_lerp;
     UpdateFPSCameraAnimated(&demo_scene.camera, player_head_pos, &body->rotation, delta, input, body->is_grounded, &body->look_dir);
 
+    camera->offset.y = Lerp(camera->offset.y, 0.f, 10.f * delta);
     if (input->shoot) {
+        RandomAppSoundPitch(SND_GUN_1, 0.95f, 1.05f);
         PlayAppSound(SND_GUN_1);
+        camera->offset.y = 0.07f;
+
         Vector3 start = demo_scene.camera.camera.position;
         const float distance = 20.f;
         Vector3 end = Vector3Add(start, Vector3Scale(body->look_dir, distance));
