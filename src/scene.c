@@ -165,19 +165,6 @@ void CreateScene() {
     demo_scene.camera = CreateCamera(player_position, &demo_scene.player.rotation, &demo_scene.player.look_dir);
 }
 
-// TODO: GTFO
-void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
-    SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
-
-    static float light_t = 0.f;
-    light_t += GetFrameTime();
-    attrib->lightStrength = sin(light_t) * 0.3f + 0.6f;
-    SetShaderValue(attrib->shader, attrib->strengthLoc, &attrib->lightStrength, SHADER_UNIFORM_FLOAT);
-
-    // Update the light shader with the camera view position
-    SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
-}
-
 void UpdateScene(float delta) {
     demo_scene.delta_time = delta;
     UpdateDebugDraw(delta);
@@ -256,6 +243,8 @@ void UnloadScene() {
 
 ShaderAttributes CreateShader() {
     ShaderAttributes attrib = { 0 };
+    attrib.light_list = NULL;
+
     // Load shader and set up some uniforms
     attrib.shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"lighting.fs");
     attrib.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(attrib.shader, "matModel");
@@ -269,14 +258,40 @@ ShaderAttributes CreateShader() {
     attrib.fogDensityLoc = GetShaderLocation(attrib.shader, "fogDensity");
     SetShaderValue(attrib.shader, attrib.fogDensityLoc, &attrib.fogDensity, SHADER_UNIFORM_FLOAT);
 
-    attrib.lightStrength = 0.1f;
-    attrib.strengthLoc = GetShaderLocation(attrib.shader, "strength");
-    SetShaderValue(attrib.shader, attrib.strengthLoc, &attrib.lightStrength, SHADER_UNIFORM_FLOAT);
+    // LIGHT INSTANCE
+    Vector3 light_pos = (Vector3){ 0, 4, 0 };
+    Vector3 light_target = light_pos;
+    Color light_color = (Color){ 5,5,5,255 };
+    float light_strength = 0.1f;
+    Light light_inst = CreateLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, attrib.shader);
+    arrput(attrib.light_list, light_inst);
 
-    // Using just 1 point lights
-    attrib.light = CreateLight(LIGHT_POINT, (Vector3) { 0, 4, 0 }, (Vector3) { 0, 4, 0 }, (Color) {5,5,5,255}, attrib.shader);
+    // Initialize light count
+    attrib.lightCountLoc = GetShaderLocation(attrib.shader, "lightCount");
+    int light_count = arrlen(attrib.light_list);
+    SetShaderValue(attrib.shader, attrib.lightCountLoc, &light_count, SHADER_UNIFORM_INT);
 
     return attrib;
+}
+
+// TODO: GTFO
+void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
+    SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+
+    // Update the light shader with the camera view position
+    SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
+
+    int light_count = arrlen(attrib->light_list);
+    SetShaderValue(attrib->shader, attrib->lightCountLoc, &light_count, SHADER_UNIFORM_INT);
+
+    for (int i = 0; i < light_count; i++) {
+        Light* inst = &attrib->light_list[i];
+        static float light_t = 0.f;
+        light_t += GetFrameTime();
+        inst->strength = sin(light_t) * 0.3f + 0.6f;
+
+        UpdateLightValues(attrib->shader, *inst);
+    }
 }
 
 
