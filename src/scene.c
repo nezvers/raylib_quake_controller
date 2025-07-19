@@ -301,7 +301,7 @@ ShaderAttributes CreateShader() {
     // Initialize light count
     attrib.lightCountLoc = GetShaderLocation(attrib.shader, "lightCount");
     int light_count = arrlen(attrib.light_list);
-    SetShaderValue(attrib.shader, attrib.lightCountLoc, &light_count, SHADER_UNIFORM_INT);
+    SetShaderValue(attrib.shader, attrib.lightCountLoc, &light_count, SHADER_UNIFORM_INT); 
 
     return attrib;
 }
