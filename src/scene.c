@@ -220,15 +220,24 @@ void DrawScene() {
 
 void UnloadScene() {
     arrfree(demo_scene.static_list);
-    arrfree(demo_scene.shader_list);
+    arrfree(demo_scene.dynamic_list);
+    arrfree(demo_scene.platform_list);
+    arrfree(demo_scene.platform_animation_list);
+
     for (int i = 0; i < arrlen(demo_scene.texture_list); i++) {
         UnloadTexture(demo_scene.texture_list[i]);
     }
     arrfree(demo_scene.texture_list);
+
     for (int i = 0; i < arrlen(demo_scene.model_list); i++) {
         UnloadModel(demo_scene.model_list[i]);
     }
-    arrfree(demo_scene.static_list);
+    arrfree(demo_scene.model_list);
+
+    for (int i = 0; i < arrlen(demo_scene.shader_list); i++) {
+        arrfree(demo_scene.shader_list[i].light_list);
+    }
+    arrfree(demo_scene.shader_list);
 
     /*
     UnloadTexture(texture);
