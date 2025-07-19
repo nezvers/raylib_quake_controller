@@ -125,3 +125,7 @@ Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter p
     };
     return character;
 }
+
+bool IsCharacterGrounded(PhysicsInstance* instance, Character* character) {
+    return IsPhysicsPairColliding(&demo_scene.physics, character->phys.footGeom, instance->space);
+}
