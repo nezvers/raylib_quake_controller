@@ -8,10 +8,11 @@
 
 static void Enter();
 static void Update();
+static void LoadUpdate();
 static void Exit();
 static void Draw();
 static void Gui();
-AppState app_demo_room = { Enter, Update, Exit, Draw, Gui };
+AppState app_demo_room = { Enter, LoadUpdate, Exit, Draw, Gui };
 
 
 //Character player;
@@ -30,6 +31,11 @@ static void Enter() {
 
     DisableCursor();  // Limit cursor to relative movement inside the window
     is_mouse_disabled = true;
+}
+
+static void LoadUpdate() {
+    // Skip first update frame, stuff are loading in and make longer frame time
+    app_demo_room.update = Update;
 }
 
 static void Update() {
