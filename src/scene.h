@@ -15,12 +15,11 @@
 typedef struct {
     int ambientLoc;
     int fogDensityLoc;
-    int strengthLoc;
+    int lightCountLoc;
     float fogDensity;
-    float lightStrength;
     Shader shader;
-    Light light;
-}ShaderAttributes;
+    Light* light_list;
+} ShaderAttributes;
 
 typedef struct {
     Vector3 position;
@@ -50,8 +49,6 @@ typedef struct {
 
 extern Scene demo_scene;
 
-ShaderAttributes CreateShader();
-
 void CreateScene();
 
 void UpdateScene(float delta);
@@ -61,5 +58,9 @@ void DrawScene();
 void UnloadScene();
 
 bool IsCharacterGrounded(PhysicsInstance* instance, Character* character);
+
+ShaderAttributes CreateShader();
+
+void UpdateShader(ShaderAttributes* attrib, Camera* camera);
 
 #endif // SCENE_H

@@ -11,7 +11,6 @@ varying vec3 fragNormal;
 // Input uniform values
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
-uniform float strength;
 
 // NOTE: Add your custom variables here
 
@@ -25,12 +24,14 @@ struct Light {
     vec3 position;
     vec3 target;
     vec4 color;
+    float strength;
 };
 
 // Input lighting values
 uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient;
 uniform vec3 viewPos;
+uniform int lightCount;
 
 void main()
 {
@@ -45,7 +46,7 @@ void main()
 
     // NOTE: Implement here your fragment shader code
 
-    for (int i = 0; i < MAX_LIGHTS; i++)
+    for (int i = 0; i < lightCount; i++)
     {
         if (lights[i].enabled == 1)
         {
@@ -58,7 +59,7 @@ void main()
 
             if (lights[i].type == LIGHT_POINT)
             {
-                light = normalize(lights[i].position - fragPosition) * strength;
+                light = normalize(lights[i].position - fragPosition) * lights[i].strength;
             }
 
             float NdotL = max(dot(normal, light), 0.0);
