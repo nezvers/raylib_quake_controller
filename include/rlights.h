@@ -130,7 +130,6 @@ static int lightsCount = 0;    // Current amount of created lights
 //----------------------------------------------------------------------------------
 
 // Create a light and get shader locations
-// TODO: optimize with ditry flags to skip unnecessary updates
 Light CreateLight(int type, Vector3 position, Vector3 target, Color color, float strength, int i, Shader shader)
 {
     Light light = { 0 };
@@ -161,6 +160,8 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, float
 // NOTE: Light shader locations should be available 
 void UpdateLightValues(Shader shader, Light light)
 {
+    if (0 == light.dirty) { return; }
+
     if (LIGHT_DIRTY_ENABLED & light.dirty) {
         SetShaderValue(shader, light.enabledLoc, &light.enabled, SHADER_UNIFORM_INT);
     }

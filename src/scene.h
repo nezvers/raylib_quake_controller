@@ -57,8 +57,6 @@ void DrawScene();
 
 void UnloadScene();
 
-bool IsCharacterGrounded(PhysicsInstance* instance, Character* character);
-
 ShaderAttributes CreateShader();
 
 void UpdateShader(ShaderAttributes* attrib, Camera* camera);

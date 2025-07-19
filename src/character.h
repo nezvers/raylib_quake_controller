@@ -40,15 +40,10 @@ typedef struct {
 /* Generate initialized struct */
 Character CreateCharacter(Vector3 position, Vector2 rotation, PhysicsCharacter phys);
 
-/*
-Quake-like movement
-body: state struct
-rot: horizontal rotation
-side: (-1 to 1) walk direction sideways
-forward: (-1 to 1) walk direction forward
-*/
 void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, PlayerInput* input, float delta);
 
 void UpdateCharacterPlayer(PhysicsInstance* instance, Character* body, PlayerInput* input, CameraFPS* camera, float delta);
+
+bool IsCharacterGrounded(PhysicsInstance* instance, Character* character);
 
 #endif // CHARACTER_H

@@ -184,6 +184,13 @@ void UpdateScene(float delta) {
     demo_scene.shader_list[0].light_list[0].position = Vector3Add(demo_scene.player.position, above);
     demo_scene.shader_list[0].light_list[0].dirty |= LIGHT_DIRTY_POSITION;
 
+    // Light flicker
+    Light* center_light = &demo_scene.shader_list[0].light_list[1];
+    static float light_t = 0.f;
+    light_t += GetFrameTime();
+    center_light->strength = sin(light_t) * 0.3f + 0.6f;
+    center_light->dirty |= LIGHT_DIRTY_STRENGTH;
+
     UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
 }
 
@@ -306,13 +313,6 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     // Update the light shader with the camera view position
     SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
 
-    // Light flicker
-    Light* center_light = &attrib->light_list[1];
-    static float light_t = 0.f;
-    light_t += GetFrameTime();
-    center_light->strength = sin(light_t) * 0.3f + 0.6f;
-    center_light->dirty |= LIGHT_DIRTY_STRENGTH;
-
     int light_count = arrlen(attrib->light_list);
     SetShaderValue(attrib->shader, attrib->lightCountLoc, &light_count, SHADER_UNIFORM_INT);
 
@@ -320,9 +320,4 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
         UpdateLightValues(attrib->shader, attrib->light_list[i]);
         attrib->light_list[i].dirty = 0;
     }
-}
-
-
-bool IsCharacterGrounded(PhysicsInstance* instance, Character* character) {
-    return IsPhysicsPairColliding(&demo_scene.physics, character->phys.footGeom, instance->space);
 }
