@@ -96,7 +96,7 @@ void CreateModels() {
 
     // Assign texture and shader
     demo_scene.texture_list = NULL;
-    Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"texel_checker.png");
+    Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"images/texel_checker.png");
     arrput(demo_scene.texture_list, tex_cheker);
 
     demo_scene.shader_list = NULL;
@@ -266,7 +266,7 @@ ShaderAttributes CreateShader() {
     attrib.light_list = NULL;
 
     // Load shader and set up some uniforms
-    attrib.shader = LoadShader(RESOURCES_PATH"lighting.vs", RESOURCES_PATH"lighting.fs");
+    attrib.shader = LoadShader(RESOURCES_PATH"shaders/lighting.vs", RESOURCES_PATH"shaders/lighting.fs");
     attrib.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(attrib.shader, "matModel");
     attrib.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(attrib.shader, "viewPos");
 
