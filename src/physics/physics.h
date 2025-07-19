@@ -56,8 +56,4 @@ void DestroyPhysics(PhysicsInstance* instance);
 void UpdatePhysics(PhysicsInstance* instance, float delta_time);
 
 
-/* COLLIDER API */
-
-
-
 #endif // PHYSICS_H
