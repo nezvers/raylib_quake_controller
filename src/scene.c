@@ -61,7 +61,7 @@ int SceneAddPlatform(Scene* scene, int model_id, dBodyID geom_id, PlatformMoveme
     int anim_i = arrlen(scene->platform_animation_list);
     arrput(scene->platform_animation_list, anim);
     if (arrlen(scene->platform_animation_list) > anim_i) {
-        dBodySetData(dynamic_mesh.body, &scene->platform_animation_list[anim_i]);
+        dBodySetData(dynamic_mesh.body, (void*) &scene->platform_animation_list[anim_i]);
     }
 
     int i = arrlen(scene->platform_list);
@@ -179,8 +179,12 @@ void UpdateScene(float delta) {
 
     UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, &player_input, &demo_scene.camera, delta);
 
-    UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
+    // Player's light follow
+    Vector3 above = (Vector3){0, 2, 0};
+    demo_scene.shader_list[0].light_list[0].position = Vector3Add(demo_scene.player.position, above);
+    demo_scene.shader_list[0].light_list[0].dirty |= LIGHT_DIRTY_POSITION;
 
+    UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
 }
 
 void DrawScene() {
@@ -272,8 +276,20 @@ ShaderAttributes CreateShader() {
     Vector3 light_target = light_pos;
     Color light_color = (Color){ 5,5,5,255 };
     float light_strength = 0.1f;
-    Light light_inst = CreateLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, attrib.shader);
-    arrput(attrib.light_list, light_inst);
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        Light light_inst = CreateLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, i, attrib.shader);
+        arrput(attrib.light_list, light_inst);
+        light_inst.enabled = false;
+        light_inst.dirty = LIGHT_DIRTY_ENABLED;
+    }
+
+    // player
+    attrib.light_list[0].enabled = true;
+    attrib.light_list[0].strength = 0.5f;
+    attrib.light_list[0].dirty = LIGHT_DIRTY_STRENGTH;
+
+    // center
+    attrib.light_list[1].enabled = true;
 
     // Initialize light count
     attrib.lightCountLoc = GetShaderLocation(attrib.shader, "lightCount");
@@ -290,16 +306,19 @@ void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     // Update the light shader with the camera view position
     SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
 
+    // Light flicker
+    Light* center_light = &attrib->light_list[1];
+    static float light_t = 0.f;
+    light_t += GetFrameTime();
+    center_light->strength = sin(light_t) * 0.3f + 0.6f;
+    center_light->dirty |= LIGHT_DIRTY_STRENGTH;
+
     int light_count = arrlen(attrib->light_list);
     SetShaderValue(attrib->shader, attrib->lightCountLoc, &light_count, SHADER_UNIFORM_INT);
 
     for (int i = 0; i < light_count; i++) {
-        Light* inst = &attrib->light_list[i];
-        static float light_t = 0.f;
-        light_t += GetFrameTime();
-        inst->strength = sin(light_t) * 0.3f + 0.6f;
-
-        UpdateLightValues(attrib->shader, *inst);
+        UpdateLightValues(attrib->shader, attrib->light_list[i]);
+        attrib->light_list[i].dirty = 0;
     }
 }
 
