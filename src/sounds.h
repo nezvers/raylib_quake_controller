@@ -3,22 +3,7 @@
 
 #include "raylib.h"
 
-
-#define FOR_EACH_SOUND_ENTRY(SOUND_FN) \
-    SOUND_FN(SND_JUMP_HUH, RESOURCES_PATH"sounds/snd_huh_jump.wav", 0.02f)\
-    SOUND_FN(SND_LANDING, RESOURCES_PATH"sounds/snd_landing.wav", 0.01f)\
-    SOUND_FN(SND_GUN_0, RESOURCES_PATH"sounds/snd_gun_0.wav", 0.02f)\
-    SOUND_FN(SND_GUN_1, RESOURCES_PATH"sounds/snd_gun_1.wav", 0.02f)\
-
-#define DEFINE_ENUM_ID(id_enum, resource_string, volume_reference) id_enum,
-
-enum SoundTypes {
-    FOR_EACH_SOUND_ENTRY(DEFINE_ENUM_ID)
-    SOUNDS_COUNT,
-};
-
 extern int sounds_volume;
-extern Sound sound_list[SOUNDS_COUNT];
 
 void InitGameSounds();
 

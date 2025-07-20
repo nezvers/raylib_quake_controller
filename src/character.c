@@ -4,6 +4,7 @@
 #include "scene.h"
 #include "debug_draw.h"
 #include "sounds.h"
+#include "assets.h"
 
 
 #define CROUCH_HEIGHT 0.f

@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "stb_ds.h"
 
+
+
 int CreateModelPlane(Scene* scene, Vector2 size, Shader shadr, Texture texture) {
     Model model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
