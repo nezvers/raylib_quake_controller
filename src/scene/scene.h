@@ -2,26 +2,18 @@
 #define SCENE_H
 
 #include "raylib.h"
-#include "rlights.h"
 #include "character.h"
 #include "physics.h"
 #include "physics_create.h"
 #include "camera.h"
 #include "rlModels.h"	
 #include "rlModels_IO.h"
+#include "shaders.h"
 
 #define MODEL_COUNT 5
 #define TEXTURE_COUNT 1
 #define SHADER_COUNT 1
 
-typedef struct {
-    int ambientLoc;
-    int fogDensityLoc;
-    int lightCountLoc;
-    float fogDensity;
-    Shader shader;
-    Light* light_list;
-} ShaderAttributes;
 
 typedef struct {
     Vector3 position;
@@ -62,9 +54,5 @@ void UpdateScene(float delta);
 void DrawScene();
 
 void UnloadScene();
-
-ShaderAttributes CreateShader();
-
-void UpdateShader(ShaderAttributes* attrib, Camera* camera);
 
 #endif // SCENE_H

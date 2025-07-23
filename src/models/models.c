@@ -4,7 +4,6 @@
 #include "stb_ds.h"
 
 
-
 int CreateModelPlane(Model** model_list, Vector2 size, Shader shadr, Texture texture) {
     Model model = LoadModelFromMesh(GenMeshPlane(size.x, size.y, 1.f, 1.f));
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
