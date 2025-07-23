@@ -10,10 +10,6 @@
 #include "rlModels_IO.h"
 #include "shaders.h"
 
-#define MODEL_COUNT 5
-#define TEXTURE_COUNT 1
-#define SHADER_COUNT 1
-
 
 typedef struct {
     Vector3 position;

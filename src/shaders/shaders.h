@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include "rlights.h"
 
+// TODO: add shadows https://noino.substack.com/p/raylib-graphics-shading
+
 typedef struct {
     int ambientLoc;
     int fogDensityLoc;
