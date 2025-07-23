@@ -41,12 +41,12 @@ void CreateModels() {
 
     // Static
     const int shader_ID = 0;
-    int  plane_model = CreateModelPlane(&demo_scene, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int  plane_model = CreateModelPlane(&demo_scene.model_list, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dGeomID plane_geom = CreatePhysicsPlaneStatic(&demo_scene.physics, Vector3Zero(), (Vector3) { 0, 1, 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddPlaneStatic(&demo_scene, (Vector3) { 0.f, 0.f, 0.f }, plane_model, plane_geom);
 
     const Vector3 tower_size = (Vector3){ 16.f, 32.f, 16.f };
-    int tower_model = CreateModelBox(&demo_scene, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int tower_model = CreateModelBox(&demo_scene.model_list, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     Vector3 tower_position = (Vector3){ 16.f, 16.f, 16.f };
     dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
@@ -67,14 +67,14 @@ void CreateModels() {
     const Vector3 box_size = (Vector3){ 1.f, 1.f, 1.f };
     const Vector3 box_rotation = (Vector3){ 0, 0, 0 };
     Vector3 box_position = (Vector3){ 0.f, 1.f, -0.f };
-    int box_model = CreateModelBox(&demo_scene, box_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int box_model = CreateModelBox(&demo_scene.model_list, box_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID box_body = CreatePhysicsBodyBoxDynamic(&demo_scene.physics, box_position, box_rotation, box_size, PHYS_DYNAMIC, PHYS_ALL);
     SceneAddBoxDynamic(&demo_scene, box_model, box_body);
 
     const float sphere_radius = 0.5f;
     const Vector3 sphere_rotation = (Vector3){ 0, 0, 0 };
     Vector3 sphere_position = (Vector3){ 0.f, 2.f, -0.f };
-    int sphere_model = CreateModelSphere(&demo_scene, sphere_radius, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int sphere_model = CreateModelSphere(&demo_scene.model_list, sphere_radius, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID sphere_body = CreatePhysicsBodySphereDynamic(&demo_scene.physics, sphere_position, sphere_rotation, sphere_radius, PHYS_DYNAMIC, PHYS_ALL);
     SceneAddSphereDynamic(&demo_scene, sphere_model, sphere_body);
 
@@ -83,7 +83,7 @@ void CreateModels() {
     const Vector3 platform_rotation = (Vector3){ 0, 0, 0 };
     Vector3 platform_position = (Vector3){ 0.f, -0.5f, -16.f };
     PlatformMovementAnimation platform_animation = (PlatformMovementAnimation){ platform_position, (Vector3) { 0.f, 8.f, -16.f }, platform_position, 0, 0.2f, &demo_scene.delta_time };
-    int platform_model = CreateModelBox(&demo_scene, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int platform_model = CreateModelBox(&demo_scene.model_list, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
     SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
 
