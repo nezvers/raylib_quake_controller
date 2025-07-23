@@ -51,5 +51,3 @@ int main(void){
     MainClose();
     return 0;
 }
-
-

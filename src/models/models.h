@@ -3,8 +3,6 @@
 
 #include "raylib.h"
 #include "scene.h"
-#include "rlModels.h"	
-#include "rlModels_IO.h"
 
 int CreateModelPlane(Scene* scene, Vector2 size, Shader shadr, Texture texture);
 

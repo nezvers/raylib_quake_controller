@@ -7,6 +7,8 @@
 #include "physics.h"
 #include "physics_create.h"
 #include "camera.h"
+#include "rlModels.h"	
+#include "rlModels_IO.h"
 
 #define MODEL_COUNT 5
 #define TEXTURE_COUNT 1
@@ -34,18 +36,22 @@ typedef struct {
 } DynamicMesh;
 
 typedef struct {
-    CameraFPS camera;
-    Character player;
     StaticMesh* static_list;
     DynamicMesh* dynamic_list;
     DynamicMesh* platform_list;
     Texture2D* texture_list;
     ShaderAttributes* shader_list;
     Model* model_list;
+    rlmModel* master_model_list;
+    rlmModel* instance_model_list;
+    rlmModelAnimationSet* animation_set_list;
+    rlmAnimatedModelInstance* animated_instance_list;
     PlatformMovementAnimation* platform_animation_list;
+    Character player;
+    CameraFPS camera;
     PhysicsInstance physics;
     float delta_time;
-}Scene;
+} Scene;
 
 extern Scene demo_scene;
 

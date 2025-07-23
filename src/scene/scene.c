@@ -9,6 +9,7 @@
 #include "models.h"
 #include "debug_draw.h"
 #include "physics_ode.h" // for setting transforms in draw
+#include "assets.h"
 
 
 Scene demo_scene;
@@ -20,6 +21,10 @@ void CreateModels() {
     demo_scene.dynamic_list = NULL;
     demo_scene.platform_list = NULL;
     demo_scene.platform_animation_list = NULL;
+    demo_scene.animation_set_list = NULL;
+    demo_scene.animated_instance_list = NULL;
+    demo_scene.master_model_list = NULL;
+    demo_scene.instance_model_list = NULL;
     demo_scene.delta_time = 0.f;
 
     // Assign texture and shader
@@ -81,6 +86,39 @@ void CreateModels() {
     int platform_model = CreateModelBox(&demo_scene, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
     SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
+
+
+    // ANIMATED MODELS
+    Model original_model = LoadModel(mdl_file_list[MDL_ROBOT]);
+    rlmModel master_model = rlmLoadFromModel(original_model);
+    for (int i = 0; i < master_model.groupCount; i++)
+        rlmSetMaterialDefShader(&master_model.groups[i].material, shader_attrib.shader);
+    arrput(demo_scene.master_model_list, master_model);
+
+    rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
+    if (master_model.skeleton){
+        ModelAnimation* animations = LoadModelAnimations(mdl_file_list[MDL_ROBOT], &animation_set.sequenceCount);
+        animation_set.sequences = rlmLoadModelAnimations(demo_scene.master_model_list[0].skeleton, animations, animation_set.sequenceCount);
+    }
+    arrput(demo_scene.animation_set_list, animation_set);
+
+    rlmModel instance_model = rlmCloneModel(demo_scene.master_model_list[0]);
+    instance_model.groups[1].material.baseChannel.color = SKYBLUE; // instance coloring
+    arrput(demo_scene.instance_model_list, instance_model);
+
+    rlmAnimatedModelInstance animated_instance = (rlmAnimatedModelInstance){ 0 };
+    animated_instance.model = &demo_scene.instance_model_list[0];
+    animated_instance.transform = rlmPQSTranslation(-6.f, 3, 0); // Test position
+    animated_instance.transform.rotation = QuaternionFromAxisAngle((Vector3){0, 1, 0}, 180 * DEG2RAD); // Test rotation
+
+    if (demo_scene.master_model_list[0].skeleton){
+        animated_instance.sequences = &demo_scene.animation_set_list[0]; // TODO: use index
+        animated_instance.interpolate = true;
+        animated_instance.currentPose = rlmLoadPoseFromModel(demo_scene.master_model_list[0]);
+
+        rlmSetAnimationInstanceSequence(&animated_instance, 0); // ?? sets animation
+    }
+    arrput(demo_scene.animated_instance_list, animated_instance);
 }
 
 void CreateScene() {
@@ -110,7 +148,7 @@ void UpdateScene(float delta) {
     // Player's light follow
     Vector3 above = (Vector3){0, 2, 0};
     demo_scene.shader_list[0].light_list[0].position = Vector3Add(demo_scene.player.position, above);
-    demo_scene.shader_list[0].light_list[0].dirty |= LIGHT_DIRTY_POSITION;
+    demo_scene.shader_list[0].light_list[0].dirty |= LIGHT_DIRTY_POSITION; 
 
     // Light flicker
     Light* center_light = &demo_scene.shader_list[0].light_list[1];
@@ -120,6 +158,28 @@ void UpdateScene(float delta) {
     center_light->dirty |= LIGHT_DIRTY_STRENGTH;
 
     UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
+
+    // Animated models
+    for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+        rlmAnimatedModelInstance* instance = &demo_scene.animated_instance_list[i];
+        rlmAdvanceAnimationInstance(instance, delta);
+    }
+
+    if (IsKeyPressed(KEY_ENTER)){
+        for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+            demo_scene.animated_instance_list[i].interpolate = !demo_scene.animated_instance_list[i].interpolate;
+            TraceLog(LOG_INFO, "Animating %s\n", demo_scene.animated_instance_list[i].interpolate ? "ON" : "OFF");
+        }
+    }
+
+    if (IsKeyPressed(KEY_RIGHT)) {
+        for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+            demo_scene.animated_instance_list[i].currentSequence = (demo_scene.animated_instance_list[i].currentSequence + 1) % demo_scene.animated_instance_list[i].sequences->sequenceCount;
+            rlmSetAnimationInstanceSequence(&demo_scene.animated_instance_list[i], demo_scene.animated_instance_list[i].currentSequence);
+            TraceLog(LOG_INFO, "Current sequence %d\n", demo_scene.animated_instance_list[i].currentSequence);
+        }
+    }
+
 }
 
 void DrawScene() {
@@ -129,7 +189,6 @@ void DrawScene() {
 
     // Draw level
     for (int i = 0; i < arrlen(demo_scene.static_list); i++) {
-        
         DrawModel(demo_scene.model_list[demo_scene.static_list[i].model], demo_scene.static_list[i].position, 1.0f, WHITE);
     }
     for (int i = 0; i < arrlen(demo_scene.dynamic_list); i++) {
@@ -150,6 +209,12 @@ void DrawScene() {
         DrawModel(*model, Vector3Zero(), 1.0f, WHITE);
     }
 
+    // Animated models
+    for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+        rlmAnimatedModelInstance* instance = &demo_scene.animated_instance_list[i];
+        rlmDrawModelWithPose(*instance->model, instance->transform, &instance->currentPose);
+    }
+
     DrawSphere((Vector3) { 0.f, 300.f, -300.f}, 100.f, RED);
 
     DrawDebugDraw();
@@ -162,6 +227,10 @@ void UnloadScene() {
     arrfree(demo_scene.dynamic_list);
     arrfree(demo_scene.platform_list);
     arrfree(demo_scene.platform_animation_list);
+    arrfree(demo_scene.master_model_list);
+
+    // ?? : Elements Don't have to be unloaded
+    arrfree(demo_scene.animated_instance_list);
 
     for (int i = 0; i < arrlen(demo_scene.texture_list); i++) {
         UnloadTexture(demo_scene.texture_list[i]);
@@ -173,22 +242,25 @@ void UnloadScene() {
     }
     arrfree(demo_scene.model_list);
 
+    for (int i = 0; i < arrlen(demo_scene.master_model_list); i++) {
+        rlmUnloadModel(&demo_scene.master_model_list[i]);
+    }
+    arrfree(demo_scene.master_model_list);
+
+    for (int i = 0; i < arrlen(demo_scene.animation_set_list); i++) {
+        rlmUnloadAnimationSet(&demo_scene.animation_set_list[i]);
+    }
+    arrfree(demo_scene.animation_set_list);
+
     for (int i = 0; i < arrlen(demo_scene.shader_list); i++) {
         arrfree(demo_scene.shader_list[i].light_list);
     }
     arrfree(demo_scene.shader_list);
 
-    /*
-    UnloadTexture(texture);
-    UnloadTexture(texturePlane);
-    UnloadModel(plane);
-    UnloadModel(sphere);
-    UnloadModel(box);
-    */
-
     DestroyPhysics(NULL);
 }
 
+// TODO: Separate shader functions into it's own module
 ShaderAttributes CreateShader() {
     ShaderAttributes attrib = { 0 };
     attrib.light_list = NULL;
@@ -234,7 +306,7 @@ ShaderAttributes CreateShader() {
     return attrib;
 }
 
-// TODO: GTFO
+
 void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
     SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
 

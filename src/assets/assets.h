@@ -25,6 +25,7 @@ extern Sound sound_list[SOUNDS_COUNT];
 /* MODELS */
 #define FOR_EACH_MODEL_ENTRY(MODEL_FN) \
     MODEL_FN(MDL_ANIMATED_CUBE, RESOURCES_PATH"glb/animated_cube.glb")\
+    MODEL_FN(MDL_ROBOT, RESOURCES_PATH"glb/robot.glb")\
 
 #define DEFINE_MDL_ENUM_ID(id_enum, resource_string) id_enum,
 
