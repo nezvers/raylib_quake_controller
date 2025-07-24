@@ -5,6 +5,7 @@
 #include "rlights.h"
 
 // TODO: add shadows https://noino.substack.com/p/raylib-graphics-shading
+// https://github.com/WEREMSOFT/c99-raylib-shadowmap
 
 typedef struct {
     int ambientLoc;
@@ -15,8 +16,10 @@ typedef struct {
     Light* light_list;
 } ShaderAttributes;
 
-ShaderAttributes CreateShader();
+ShaderAttributes CreateShader(int shader_id);
 
 void UpdateShader(ShaderAttributes* attrib, Camera* camera);
+
+void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int i, ShaderAttributes** shader_attribute);
 
 #endif // SHADERS_H

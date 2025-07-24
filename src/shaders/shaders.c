@@ -2,18 +2,30 @@
 #include "stb_ds.h"
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
+#include "assets.h"
+
+void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int i, ShaderAttributes** shader_attribute) {
+    ShaderAttributes* attribute_list = *shader_attribute;
+
+    for (int i = 0; i < arrlen(attribute_list); i++) {
+        Light light = CreateLight(LIGHT_POINT, position, target, color, strength, i, (*shader_attribute)->shader);
+        arrput(attribute_list[i].light_list, light);
+
+        int light_count = arrlen(attribute_list[i].light_list);
+        SetShaderValue(attribute_list[i].shader, attribute_list[i].lightCountLoc, &light_count, SHADER_UNIFORM_INT);
+    }
+}
 
 // TODO: Separate shader functions into it's own module
-ShaderAttributes CreateShader() {
+ShaderAttributes CreateShader(int shader_id) {
     ShaderAttributes attrib = { 0 };
     attrib.light_list = NULL;
 
     // Load shader and set up some uniforms
-    attrib.shader = LoadShader(RESOURCES_PATH"shaders/lighting.vs", RESOURCES_PATH"shaders/lighting.fs");
+    attrib.shader = LoadShader(sdr_vs_file_list[shader_id], sdr_fs_file_list[shader_id]);
     attrib.shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(attrib.shader, "matModel");
     attrib.shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(attrib.shader, "viewPos");
 
-    // Ambient light level
     attrib.ambientLoc = GetShaderLocation(attrib.shader, "ambient");
     SetShaderValue(attrib.shader, attrib.ambientLoc, (float[4]) { 0.001f, 0.001f, 0.001f, 1.0f }, SHADER_UNIFORM_VEC4);
 
@@ -21,27 +33,6 @@ ShaderAttributes CreateShader() {
     attrib.fogDensityLoc = GetShaderLocation(attrib.shader, "fogDensity");
     SetShaderValue(attrib.shader, attrib.fogDensityLoc, &attrib.fogDensity, SHADER_UNIFORM_FLOAT);
 
-    // LIGHT INSTANCE
-    Vector3 light_pos = (Vector3){ 0, 4, 0 };
-    Vector3 light_target = light_pos;
-    Color light_color = (Color){ 5,5,5,255 };
-    float light_strength = 0.1f;
-    for (int i = 0; i < MAX_LIGHTS; i++) {
-        Light light_inst = CreateLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, i, attrib.shader);
-        arrput(attrib.light_list, light_inst);
-        light_inst.enabled = false;
-        light_inst.dirty = LIGHT_DIRTY_ENABLED;
-    }
-
-    // player
-    attrib.light_list[0].enabled = true;
-    attrib.light_list[0].strength = 0.5f;
-    attrib.light_list[0].dirty = LIGHT_DIRTY_STRENGTH;
-
-    // center
-    attrib.light_list[1].enabled = true;
-
-    // Initialize light count
     attrib.lightCountLoc = GetShaderLocation(attrib.shader, "lightCount");
     int light_count = arrlen(attrib.light_list);
     SetShaderValue(attrib.shader, attrib.lightCountLoc, &light_count, SHADER_UNIFORM_INT);

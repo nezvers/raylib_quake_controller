@@ -21,6 +21,7 @@ void CreateModels() {
     demo_scene.platform_animation_list = NULL;
     demo_scene.animation_set_list = NULL;
     demo_scene.animated_instance_list = NULL;
+    demo_scene.model_list = NULL;
     demo_scene.master_model_list = NULL;
     demo_scene.instance_model_list = NULL;
     demo_scene.delta_time = 0.f;
@@ -31,11 +32,16 @@ void CreateModels() {
     arrput(demo_scene.texture_list, tex_cheker);
 
     demo_scene.shader_list = NULL;
-    ShaderAttributes shader_attrib = CreateShader();
+    ShaderAttributes shader_attrib = CreateShader(SDR_GENERIC);
     arrput(demo_scene.shader_list, shader_attrib);
 
-    // Ground
-    demo_scene.model_list = NULL;
+    Vector3 light_pos = (Vector3){ 0, 4, 0 };
+    Vector3 light_target = light_pos;
+    Color light_color = (Color){ 5,5,5,255 };
+    float light_strength = 0.5f;
+    CreateShadersLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, 0, &demo_scene.shader_list);
+    light_strength = 0.1f;
+    CreateShadersLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, 1, &demo_scene.shader_list);
 
     // Static
     const int shader_ID = 0;
@@ -84,7 +90,6 @@ void CreateModels() {
     int platform_model = CreateModelBox(&demo_scene.model_list, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
     SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
-
 
     // ANIMATED MODELS
     Model original_model = LoadModel(mdl_file_list[MDL_ROBOT]);

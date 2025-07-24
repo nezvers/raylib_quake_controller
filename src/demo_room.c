@@ -34,6 +34,9 @@ static void Enter() {
 }
 
 static void LoadUpdate() {
+    static int count_down = 2;
+    count_down--;
+    if (count_down > 0) { return; }
     // Skip first update frame, stuff are loading in and make longer frame time
     app_demo_room.update = Update;
 }
