@@ -40,7 +40,7 @@ extern const char* mdl_file_list[MODELS_COUNT];
 /* SHADERS */
 #define FOR_EACH_SHADER_ENTRY(SHADER_FN) \
     SHADER_FN(SDR_GENERIC, RESOURCES_PATH"shaders/lighting.vs", RESOURCES_PATH"shaders/lighting.fs")\
-    SHADER_FN(SDR_SKINNING, RESOURCES_PATH"shaders/skinning_v100.vs", RESOURCES_PATH"shaders/skinning_v100.fs")\
+    SHADER_FN(SDR_SKINNING, RESOURCES_PATH"shaders/skinning_light.vs", RESOURCES_PATH"shaders/skinning_light.fs")\
 
 #define DEFINE_SDR_ENUM_ID(id_enum, resource_vs_string, resource_fs_string) id_enum,
 

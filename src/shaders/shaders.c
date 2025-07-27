@@ -4,15 +4,16 @@
 #include "rlights.h"
 #include "assets.h"
 
-void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int i, ShaderAttributes** shader_attribute) {
+void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int index, ShaderAttributes** shader_attribute) {
     ShaderAttributes* attribute_list = *shader_attribute;
 
     for (int i = 0; i < arrlen(attribute_list); i++) {
-        Light light = CreateLight(LIGHT_POINT, position, target, color, strength, i, (*shader_attribute)->shader);
-        arrput(attribute_list[i].light_list, light);
+        ShaderAttributes* attrib = &attribute_list[i];
+        Light light = CreateLight(type, position, target, color, strength, index, attrib->shader);
+        arrput(attrib->light_list, light);
 
-        int light_count = arrlen(attribute_list[i].light_list);
-        SetShaderValue(attribute_list[i].shader, attribute_list[i].lightCountLoc, &light_count, SHADER_UNIFORM_INT);
+        int light_count = arrlen(attrib->light_list);
+        SetShaderValue(attrib->shader, attrib->lightCountLoc, &light_count, SHADER_UNIFORM_INT);
     }
 }
 

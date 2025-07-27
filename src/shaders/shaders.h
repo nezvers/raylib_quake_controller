@@ -20,6 +20,6 @@ ShaderAttributes CreateShader(int shader_id);
 
 void UpdateShader(ShaderAttributes* attrib, Camera* camera);
 
-void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int i, ShaderAttributes** shader_attribute);
+void CreateShadersLight(int type, Vector3 position, Vector3 target, Color color, float strength, int index, ShaderAttributes** shader_attribute);
 
 #endif // SHADERS_H
