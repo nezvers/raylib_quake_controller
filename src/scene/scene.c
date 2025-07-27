@@ -15,8 +15,8 @@ Scene demo_scene;
 
 // Mockup for loading a scene
 void CreateModels() {
-    Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"images/texel_checker.png");
-    arrput(demo_scene.texture_list, tex_cheker);
+    int texture_ID = 0;
+    arrput(demo_scene.texture_list, LoadTexture(RESOURCES_PATH"images/texel_checker.png"));
 
     arrput(demo_scene.shader_list, CreateShader(SDR_GENERIC));
     arrput(demo_scene.shader_list, CreateShader(SDR_SKINNING));
@@ -31,12 +31,12 @@ void CreateModels() {
 
     // Static
     int shader_ID = 0;
-    int  plane_model = CreateModelPlane(&demo_scene.model_list, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int  plane_model = CreateModelPlane(&demo_scene.model_list, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
     dGeomID plane_geom = CreatePhysicsPlaneStatic(&demo_scene.physics, Vector3Zero(), (Vector3) { 0, 1, 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddPlaneStatic(&demo_scene, (Vector3) { 0.f, 0.f, 0.f }, plane_model, plane_geom);
 
     const Vector3 tower_size = (Vector3){ 16.f, 32.f, 16.f };
-    int tower_model = CreateModelBox(&demo_scene.model_list, tower_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int tower_model = CreateModelBox(&demo_scene.model_list, tower_size, demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
     Vector3 tower_position = (Vector3){ 16.f, 16.f, 16.f };
     dGeomID tower_geom = CreatePhysicsBoxStatic(&demo_scene.physics, tower_position, (Vector3) { 0 }, tower_size, PHYS_SOLID, PHYS_ALL);
     SceneAddCubeStatic(&demo_scene, tower_position, tower_model, tower_geom);
@@ -57,14 +57,14 @@ void CreateModels() {
     const Vector3 box_size = (Vector3){ 1.f, 1.f, 1.f };
     const Vector3 box_rotation = (Vector3){ 0, 0, 0 };
     Vector3 box_position = (Vector3){ 0.f, 1.f, -0.f };
-    int box_model = CreateModelBox(&demo_scene.model_list, box_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int box_model = CreateModelBox(&demo_scene.model_list, box_size, demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
     dBodyID box_body = CreatePhysicsBodyBoxDynamic(&demo_scene.physics, box_position, box_rotation, box_size, PHYS_DYNAMIC, PHYS_ALL);
     SceneAddBoxDynamic(&demo_scene, box_model, box_body);
 
     const float sphere_radius = 0.5f;
     const Vector3 sphere_rotation = (Vector3){ 0, 0, 0 };
     Vector3 sphere_position = (Vector3){ 0.f, 2.f, -0.f };
-    int sphere_model = CreateModelSphere(&demo_scene.model_list, sphere_radius, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int sphere_model = CreateModelSphere(&demo_scene.model_list, sphere_radius, demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
     dBodyID sphere_body = CreatePhysicsBodySphereDynamic(&demo_scene.physics, sphere_position, sphere_rotation, sphere_radius, PHYS_DYNAMIC, PHYS_ALL);
     SceneAddSphereDynamic(&demo_scene, sphere_model, sphere_body);
 
@@ -73,13 +73,13 @@ void CreateModels() {
     const Vector3 platform_rotation = (Vector3){ 0, 0, 0 };
     Vector3 platform_position = (Vector3){ 0.f, -0.5f, -16.f };
     PlatformMovementAnimation platform_animation = (PlatformMovementAnimation){ platform_position, (Vector3) { 0.f, 8.f, -16.f }, platform_position, 0, 0.2f, &demo_scene.delta_time };
-    int platform_model = CreateModelBox(&demo_scene.model_list, platform_size, demo_scene.shader_list[shader_ID].shader, tex_cheker);
+    int platform_model = CreateModelBox(&demo_scene.model_list, platform_size, demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
     dBodyID platform_body = CreatePhysicsBoxAnimated(&demo_scene.physics, platform_position, platform_rotation, platform_size, PHYS_SOLID, 0);
     SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
 
     // ANIMATED MODELS
     shader_ID = 1;
-    Model original_model = LoadModel(mdl_file_list[MDL_ROBOT]);
+    Model original_model = LoadModel(mdl_file_list[MDL_ANIMATED_CUBE]);
     rlmModel master_model = rlmLoadFromModel(original_model);
     for (int i = 0; i < master_model.groupCount; i++)
         rlmSetMaterialDefShader(&master_model.groups[i].material, demo_scene.shader_list[shader_ID].shader);
@@ -87,7 +87,7 @@ void CreateModels() {
 
     rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
     if (master_model.skeleton){
-        ModelAnimation* animations = LoadModelAnimations(mdl_file_list[MDL_ROBOT], &animation_set.sequenceCount);
+        ModelAnimation* animations = LoadModelAnimations(mdl_file_list[MDL_ANIMATED_CUBE], &animation_set.sequenceCount);
         animation_set.sequences = rlmLoadModelAnimations(demo_scene.master_model_list[0].skeleton, animations, animation_set.sequenceCount);
     }
     arrput(demo_scene.animation_set_list, animation_set);

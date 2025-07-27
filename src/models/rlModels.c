@@ -8,7 +8,7 @@
 static Shader DefaultMaterialShader = { 0 };
 static bool DefaultMaterialShaderSet = false;
 
-#define MAX_BONE_NUM 128
+#define MAX_BONE_NUM 32
 static Matrix DefaultBoneMatricies[MAX_BONE_NUM] = { 0 };
 
 static void CheckGlobalBoneMatricies()
