@@ -2,12 +2,11 @@
 #define MODELS_H
 
 #include "raylib.h"
-#include "scene.h"
 
-int CreateModelPlane(Scene* scene, Vector2 size, Shader shadr, Texture texture);
+int CreateModelPlane(Model** model_list, Vector2 size, Shader shadr, Texture texture);
 
-int CreateModelBox(Scene* scene, Vector3 size, Shader shadr, Texture texture);
+int CreateModelBox(Model** model_list, Vector3 size, Shader shadr, Texture texture);
 
-int CreateModelSphere(Scene* scene, float radius, Shader shadr, Texture texture);
+int CreateModelSphere(Model** model_list, float radius, Shader shadr, Texture texture);
 
 #endif // MODELS_H

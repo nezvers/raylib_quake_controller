@@ -4,6 +4,7 @@
 #include "scene.h"
 #include "debug_draw.h"
 #include "sounds.h"
+#include "assets.h"
 
 
 #define CROUCH_HEIGHT 0.f
@@ -23,7 +24,14 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     }
 #endif
 
-    body->is_grounded = IsCharacterGrounded(instance, body); // <= enables jumping
+    bool new_is_grounded = IsCharacterGrounded(instance, body);
+    if (new_is_grounded != body->is_grounded) {
+        body->is_grounded = new_is_grounded;
+        if (new_is_grounded) {
+            RandomAppSoundPitch(SND_LANDING, 0.95f, 1.05f);
+            PlayAppSound(SND_LANDING);
+        }
+    }
 
     float* phys_velocity = dBodyGetLinearVel(body->phys.body);
     body->velocity = (Vector3){ phys_velocity[0], phys_velocity[1], phys_velocity[2]};
@@ -33,6 +41,7 @@ void UpdateCharacter(PhysicsInstance* instance, Character* body, float rot, Play
     if (body->is_grounded && input->jump) {
         body->velocity.y = JUMP_FORCE;
         body->is_grounded = false;
+        RandomAppSoundPitch(SND_JUMP_HUH, 0.95f, 1.05f);
         PlayAppSound(SND_JUMP_HUH);
     }
 
