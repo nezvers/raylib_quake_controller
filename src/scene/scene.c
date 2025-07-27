@@ -81,8 +81,10 @@ void CreateModels() {
     shader_ID = 1;
     Model original_model = LoadModel(mdl_file_list[MDL_ANIMATED_CUBE]);
     rlmModel master_model = rlmLoadFromModel(original_model);
-    for (int i = 0; i < master_model.groupCount; i++)
+    for (int i = 0; i < master_model.groupCount; i++) {
         rlmSetMaterialDefShader(&master_model.groups[i].material, demo_scene.shader_list[shader_ID].shader);
+        rlmSetMaterialChannelTexture(&master_model.groups[i].material.baseChannel, demo_scene.texture_list[texture_ID]);
+    }
     arrput(demo_scene.master_model_list, master_model);
 
     rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
@@ -93,7 +95,7 @@ void CreateModels() {
     arrput(demo_scene.animation_set_list, animation_set);
 
     rlmModel instance_model = rlmCloneModel(demo_scene.master_model_list[0]);
-    instance_model.groups[1].material.baseChannel.color = SKYBLUE; // instance coloring
+    //instance_model.groups[1].material.baseChannel.color = SKYBLUE; // instance coloring
     arrput(demo_scene.instance_model_list, instance_model);
 
     rlmAnimatedModelInstance animated_instance = (rlmAnimatedModelInstance){ 0 };
@@ -137,18 +139,25 @@ void UpdateScene(float delta) {
     UpdateCharacterPlayer(&demo_scene.physics, &demo_scene.player, &player_input, &demo_scene.camera, delta);
 
     // Player's light follow
-    Vector3 above = (Vector3){0, 2, 0};
-    demo_scene.shader_list[0].light_list[0].position = Vector3Add(demo_scene.player.position, above);
-    demo_scene.shader_list[0].light_list[0].dirty |= LIGHT_DIRTY_POSITION; 
+    Vector3 player_light_position = Vector3Add(demo_scene.player.position, (Vector3) { 0, 2, 0 });
 
     // Light flicker
-    Light* center_light = &demo_scene.shader_list[0].light_list[1];
     static float light_t = 0.f;
     light_t += GetFrameTime();
-    center_light->strength = sin(light_t) * 0.3f + 0.6f;
-    center_light->dirty |= LIGHT_DIRTY_STRENGTH;
+    float light_strength = sin(light_t) * 0.3f + 0.6f;
 
-    UpdateShader(&demo_scene.shader_list[0], &demo_scene.camera.camera);
+    for (int i = 0; i < arrlen(demo_scene.shader_list); i++) {
+        rlmAnimatedModelInstance* shader_instance = &demo_scene.shader_list[i];
+
+        demo_scene.shader_list[i].light_list[0].position = player_light_position;
+        demo_scene.shader_list[i].light_list[0].dirty |= LIGHT_DIRTY_POSITION;
+
+        Light* center_light = &demo_scene.shader_list[i].light_list[1];
+        center_light->strength = light_strength;
+        center_light->dirty |= LIGHT_DIRTY_STRENGTH;
+
+        UpdateShader(shader_instance, &demo_scene.camera.camera);
+    }
 
     // Animated models
     for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {

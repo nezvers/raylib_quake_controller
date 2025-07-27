@@ -29,9 +29,12 @@ ShaderAttributes CreateShader(int shader_id) {
     attrib.ambientLoc = GetShaderLocation(attrib.shader, "ambient");
     SetShaderValue(attrib.shader, attrib.ambientLoc, (float[4]) { 0.001f, 0.001f, 0.001f, 1.0f }, SHADER_UNIFORM_VEC4);
 
+    // TODO: add fog back
+    /*
     attrib.fogDensity = 0.025f;
     attrib.fogDensityLoc = GetShaderLocation(attrib.shader, "fogDensity");
     SetShaderValue(attrib.shader, attrib.fogDensityLoc, &attrib.fogDensity, SHADER_UNIFORM_FLOAT);
+    */
 
     attrib.lightCountLoc = GetShaderLocation(attrib.shader, "lightCount");
     int light_count = arrlen(attrib.light_list);
@@ -42,7 +45,8 @@ ShaderAttributes CreateShader(int shader_id) {
 
 
 void UpdateShader(ShaderAttributes* attrib, Camera* camera) {
-    SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
+    // TODO: add fog back
+    //SetShaderValue(attrib->shader, attrib->fogDensityLoc, &attrib->fogDensity, SHADER_UNIFORM_FLOAT);
 
     // Update the light shader with the camera view position
     SetShaderValue(attrib->shader, attrib->shader.locs[SHADER_LOC_VECTOR_VIEW], &camera->position.x, SHADER_UNIFORM_VEC3);
