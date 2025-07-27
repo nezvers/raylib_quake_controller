@@ -15,25 +15,11 @@ Scene demo_scene;
 
 // Mockup for loading a scene
 void CreateModels() {
-    demo_scene.static_list = NULL;
-    demo_scene.dynamic_list = NULL;
-    demo_scene.platform_list = NULL;
-    demo_scene.platform_animation_list = NULL;
-    demo_scene.animation_set_list = NULL;
-    demo_scene.animated_instance_list = NULL;
-    demo_scene.model_list = NULL;
-    demo_scene.master_model_list = NULL;
-    demo_scene.instance_model_list = NULL;
-    demo_scene.delta_time = 0.f;
-
-    // Assign texture and shader
-    demo_scene.texture_list = NULL;
     Texture2D tex_cheker = LoadTexture(RESOURCES_PATH"images/texel_checker.png");
     arrput(demo_scene.texture_list, tex_cheker);
 
-    demo_scene.shader_list = NULL;
-    ShaderAttributes shader_attrib = CreateShader(SDR_GENERIC);
-    arrput(demo_scene.shader_list, shader_attrib);
+    arrput(demo_scene.shader_list, CreateShader(SDR_GENERIC));
+    arrput(demo_scene.shader_list, CreateShader(SDR_SKINNING));
 
     Vector3 light_pos = (Vector3){ 0, 4, 0 };
     Vector3 light_target = light_pos;
@@ -44,7 +30,7 @@ void CreateModels() {
     CreateShadersLight(LIGHT_POINT, light_pos, light_target, light_color, light_strength, 1, &demo_scene.shader_list);
 
     // Static
-    const int shader_ID = 0;
+    int shader_ID = 0;
     int  plane_model = CreateModelPlane(&demo_scene.model_list, (Vector2) { 100.f, 100.f }, demo_scene.shader_list[shader_ID].shader, tex_cheker);
     dGeomID plane_geom = CreatePhysicsPlaneStatic(&demo_scene.physics, Vector3Zero(), (Vector3) { 0, 1, 0 }, PHYS_SOLID, PHYS_ALL);
     SceneAddPlaneStatic(&demo_scene, (Vector3) { 0.f, 0.f, 0.f }, plane_model, plane_geom);
@@ -92,10 +78,11 @@ void CreateModels() {
     SceneAddPlatform(&demo_scene, platform_model, platform_body, platform_animation);
 
     // ANIMATED MODELS
+    shader_ID = 1;
     Model original_model = LoadModel(mdl_file_list[MDL_ROBOT]);
     rlmModel master_model = rlmLoadFromModel(original_model);
     for (int i = 0; i < master_model.groupCount; i++)
-        rlmSetMaterialDefShader(&master_model.groups[i].material, shader_attrib.shader);
+        rlmSetMaterialDefShader(&master_model.groups[i].material, demo_scene.shader_list[shader_ID].shader);
     arrput(demo_scene.master_model_list, master_model);
 
     rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
@@ -125,8 +112,9 @@ void CreateModels() {
 }
 
 void CreateScene() {
-    // TODO: Load from scene prefab/ save file
+    demo_scene = (Scene){ 0 };
     demo_scene.physics = CreatePhysics();
+    // TODO: Load from scene prefab/ save file
     CreateModels();
     Vector3 player_position = (Vector3){ 0,1,3 };
     demo_scene.player = CreateCharacter(player_position, Vector2Zero(), CreatePhysicsPlayerBody(&demo_scene.physics, player_position));
