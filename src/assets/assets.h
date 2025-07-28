@@ -22,6 +22,20 @@ extern const char* snd_file_list[SOUNDS_COUNT];
 extern Sound sound_list[SOUNDS_COUNT];
 
 
+/* TEXTURES */
+#define FOR_EACH_TEXTURE_ENTRY(TEXTURE_FN) \
+    TEXTURE_FN(TEX_TEXEL_CHECKER, RESOURCES_PATH"images/texel_checker.png")\
+
+#define DEFINE_TEX_ENUM_ID(id_enum, resource_string) id_enum,
+
+enum TextureEnum {
+    FOR_EACH_TEXTURE_ENTRY(DEFINE_TEX_ENUM_ID)
+    TEXTURE_COUNT,
+};
+
+extern const char* tex_file_list[TEXTURE_COUNT];
+
+
 /* MODELS */
 #define FOR_EACH_MODEL_ENTRY(MODEL_FN) \
     MODEL_FN(MDL_ANIMATED_CUBE, RESOURCES_PATH"glb/animated_cube.glb")\

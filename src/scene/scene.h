@@ -6,8 +6,7 @@
 #include "physics.h"
 #include "physics_create.h"
 #include "camera.h"
-#include "rlModels.h"	
-#include "rlModels_IO.h"
+#include "models.h"	
 #include "shaders.h"
 
 

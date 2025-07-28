@@ -7,6 +7,12 @@ const char* snd_file_list[SOUNDS_COUNT] = {
 };
 
 
+#define DEFINE_TEXTURE_RESOURCE_STRING(id_enum, resource_string) resource_string,
+const char* tex_file_list[TEXTURE_COUNT] = {
+    FOR_EACH_TEXTURE_ENTRY(DEFINE_TEXTURE_RESOURCE_STRING)
+};
+
+
 #define DEFINE_MODELS_RESOURCE_STRING(id_enum, resource_string) resource_string,
 const char* mdl_file_list[MODELS_COUNT] = {
     FOR_EACH_MODEL_ENTRY(DEFINE_MODELS_RESOURCE_STRING)

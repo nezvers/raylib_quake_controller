@@ -16,7 +16,7 @@ Scene demo_scene;
 // Mockup for loading a scene
 void CreateModels() {
     int texture_ID = 0;
-    arrput(demo_scene.texture_list, LoadTexture(RESOURCES_PATH"images/texel_checker.png"));
+    arrput(demo_scene.texture_list, LoadTexture(tex_file_list[TEX_TEXEL_CHECKER]));
 
     arrput(demo_scene.shader_list, CreateShader(SDR_GENERIC));
     arrput(demo_scene.shader_list, CreateShader(SDR_SKINNING));
@@ -79,38 +79,12 @@ void CreateModels() {
 
     // ANIMATED MODELS
     shader_ID = 1;
-    Model original_model = LoadModel(mdl_file_list[MDL_ANIMATED_CUBE]);
-    rlmModel master_model = rlmLoadFromModel(original_model);
-    for (int i = 0; i < master_model.groupCount; i++) {
-        rlmSetMaterialDefShader(&master_model.groups[i].material, demo_scene.shader_list[shader_ID].shader);
-        rlmSetMaterialChannelTexture(&master_model.groups[i].material.baseChannel, demo_scene.texture_list[texture_ID]);
-    }
-    arrput(demo_scene.master_model_list, master_model);
-
-    rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
-    if (master_model.skeleton){
-        ModelAnimation* animations = LoadModelAnimations(mdl_file_list[MDL_ANIMATED_CUBE], &animation_set.sequenceCount);
-        animation_set.sequences = rlmLoadModelAnimations(demo_scene.master_model_list[0].skeleton, animations, animation_set.sequenceCount);
-    }
-    arrput(demo_scene.animation_set_list, animation_set);
-
-    rlmModel instance_model = rlmCloneModel(demo_scene.master_model_list[0]);
-    //instance_model.groups[1].material.baseChannel.color = SKYBLUE; // instance coloring
-    arrput(demo_scene.instance_model_list, instance_model);
-
-    rlmAnimatedModelInstance animated_instance = (rlmAnimatedModelInstance){ 0 };
-    animated_instance.model = &demo_scene.instance_model_list[0];
-    animated_instance.transform = rlmPQSTranslation(-6.f, 3, 0); // Test position
-    animated_instance.transform.rotation = QuaternionFromAxisAngle((Vector3){0, 1, 0}, 180 * DEG2RAD); // Test rotation
-
-    if (demo_scene.master_model_list[0].skeleton){
-        animated_instance.sequences = &demo_scene.animation_set_list[0]; // TODO: use index
-        animated_instance.interpolate = true;
-        animated_instance.currentPose = rlmLoadPoseFromModel(demo_scene.master_model_list[0]);
-
-        rlmSetAnimationInstanceSequence(&animated_instance, 0); // ?? sets animation
-    }
-    arrput(demo_scene.animated_instance_list, animated_instance);
+    int master_id = CreateAnimatedMasterModel(&demo_scene.master_model_list, mdl_file_list[MDL_ANIMATED_CUBE], demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
+    int animation_set_id = CreateAnimationSet(&demo_scene.animation_set_list, mdl_file_list[MDL_ANIMATED_CUBE], &demo_scene.master_model_list[master_id]);
+    int master_instance_id = CreateMasterModelInstance(&demo_scene.instance_model_list, &demo_scene.master_model_list[master_id]);
+    int animated_inst_id = CreateAnimatedInstance(&demo_scene.animated_instance_list, &demo_scene.instance_model_list[master_instance_id], &demo_scene.animation_set_list[animation_set_id]);
+    demo_scene.animated_instance_list[animated_inst_id].transform = rlmPQSTranslation(-6.f, 3, 0); // Test position
+    demo_scene.animated_instance_list[animated_inst_id].transform.rotation = QuaternionFromAxisAngle((Vector3) { 0, 1, 0 }, 180 * DEG2RAD); // Test rotation
 }
 
 void CreateScene() {
