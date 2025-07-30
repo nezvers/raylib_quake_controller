@@ -40,6 +40,7 @@ extern const char* tex_file_list[TEXTURE_COUNT];
 #define FOR_EACH_MODEL_ENTRY(MODEL_FN) \
     MODEL_FN(MDL_ANIMATED_CUBE, RESOURCES_PATH"glb/animated_cube.glb")\
     MODEL_FN(MDL_ROBOT, RESOURCES_PATH"glb/robot.glb")\
+    MODEL_FN(MDL_BONE_CHAIN, RESOURCES_PATH"glb/bone_chain.glb")\
 
 #define DEFINE_MDL_ENUM_ID(id_enum, resource_string) id_enum,
 

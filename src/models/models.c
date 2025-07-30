@@ -65,6 +65,7 @@ int CreateAnimationSet(rlmModelAnimationSet** set_list, const char *file, rlmMod
     }
     rlmModelAnimationSet animation_set = (rlmModelAnimationSet){ 0 };
     ModelAnimation* animations = LoadModelAnimations(file, &animation_set.sequenceCount);
+    if (animation_set.sequenceCount == 0) { return -1; }
     animation_set.sequences = rlmLoadModelAnimations(master_model->skeleton, animations, animation_set.sequenceCount);
 
     int i = arrlen(*set_list);
@@ -95,10 +96,11 @@ int CreateAnimatedInstance(rlmAnimatedModelInstance** animated_instance_list, rl
 
     if (model_instance->skeleton != NULL) {
         animated_instance.sequences = set_list;
-        animated_instance.interpolate = true;
+        animated_instance.interpolate = set_list != NULL;
         animated_instance.currentPose = rlmLoadPoseFromModel(*model_instance);
-
-        rlmSetAnimationInstanceSequence(&animated_instance, 0); // ?? sets animation
+        if (set_list != NULL) {
+            rlmSetAnimationInstanceSequence(&animated_instance, 0); // ?? sets animation
+        }
     }
 
     int i = arrlen(*animated_instance_list);

@@ -79,11 +79,13 @@ void CreateModels() {
 
     // ANIMATED MODELS
     shader_ID = 1;
-    int master_id = CreateAnimatedMasterModel(&demo_scene.master_model_list, mdl_file_list[MDL_ANIMATED_CUBE], demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
-    int animation_set_id = CreateAnimationSet(&demo_scene.animation_set_list, mdl_file_list[MDL_ANIMATED_CUBE], &demo_scene.master_model_list[master_id]);
+    int master_id = CreateAnimatedMasterModel(&demo_scene.master_model_list, mdl_file_list[MDL_BONE_CHAIN], demo_scene.shader_list[shader_ID].shader, demo_scene.texture_list[texture_ID]);
+    int animation_set_id = CreateAnimationSet(&demo_scene.animation_set_list, mdl_file_list[MDL_BONE_CHAIN], &demo_scene.master_model_list[master_id]);
     int master_instance_id = CreateMasterModelInstance(&demo_scene.instance_model_list, &demo_scene.master_model_list[master_id]);
-    int animated_inst_id = CreateAnimatedInstance(&demo_scene.animated_instance_list, &demo_scene.instance_model_list[master_instance_id], &demo_scene.animation_set_list[animation_set_id]);
-    demo_scene.animated_instance_list[animated_inst_id].transform = rlmPQSTranslation(-6.f, 3, 0); // Test position
+
+    rlmModelAnimationSet* anim_set_list = animation_set_id != -1 ? &demo_scene.animation_set_list[animation_set_id] : NULL;
+    int animated_inst_id = CreateAnimatedInstance(&demo_scene.animated_instance_list, &demo_scene.instance_model_list[master_instance_id], anim_set_list);
+    demo_scene.animated_instance_list[animated_inst_id].transform = rlmPQSTranslation(-6.f, 0, 0); // Test position
     demo_scene.animated_instance_list[animated_inst_id].transform.rotation = QuaternionFromAxisAngle((Vector3) { 0, 1, 0 }, 180 * DEG2RAD); // Test rotation
 }
 
@@ -136,11 +138,13 @@ void UpdateScene(float delta) {
     // Animated models
     for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
         rlmAnimatedModelInstance* instance = &demo_scene.animated_instance_list[i];
+        if (instance->sequences == NULL) { continue; }
         rlmAdvanceAnimationInstance(instance, delta);
     }
 
     if (IsKeyPressed(KEY_ENTER)){
         for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+            if (demo_scene.animated_instance_list[i].sequences == NULL) { continue; }
             demo_scene.animated_instance_list[i].interpolate = !demo_scene.animated_instance_list[i].interpolate;
             TraceLog(LOG_INFO, "Animating %s\n", demo_scene.animated_instance_list[i].interpolate ? "ON" : "OFF");
         }
@@ -148,6 +152,7 @@ void UpdateScene(float delta) {
 
     if (IsKeyPressed(KEY_RIGHT)) {
         for (int i = 0; i < arrlen(demo_scene.animated_instance_list); i++) {
+            if (demo_scene.animated_instance_list[i].sequences == NULL) { continue; }
             demo_scene.animated_instance_list[i].currentSequence = (demo_scene.animated_instance_list[i].currentSequence + 1) % demo_scene.animated_instance_list[i].sequences->sequenceCount;
             rlmSetAnimationInstanceSequence(&demo_scene.animated_instance_list[i], demo_scene.animated_instance_list[i].currentSequence);
             TraceLog(LOG_INFO, "Current sequence %d\n", demo_scene.animated_instance_list[i].currentSequence);
